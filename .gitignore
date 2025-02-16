@@ -1,0 +1,10 @@
+.venv
+*.py[co]
+
+*.db
+*.pq
+*.tmp
+*.wal
+
+*.parquet
+.idea
