@@ -17,4 +17,5 @@ dependencies = [
     "jupysql>=0.10.17",
     "notebook>=7.3.2",
     "psutil>=7.0.0",
+    "plotly>=6.0.0",
 ]
