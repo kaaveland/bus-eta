@@ -19,22 +19,23 @@ parser = ArgumentParser(
     description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
 )
 parser.add_argument(
-    "duckdb_file",
-    help="Path to database file containing `arrivals` and `quays` tables"
+    "duckdb_file", help="Path to database file containing `arrivals` and `quays` tables"
 )
 parser.add_argument(
-    "--max_cpus", default=psutil.cpu_count(logical=False) - 1,
-    help="Limit the number of cores used", type=int
+    "--max_cpus",
+    default=psutil.cpu_count(logical=False) - 1,
+    help="Limit the number of cores used",
+    type=int,
 )
 parser.add_argument(
     "--memory-limit-gb",
-    default=int(.8 * psutil.virtual_memory().available / 1e9),
+    default=int(0.8 * psutil.virtual_memory().available / 1e9),
     help="GB of memory to allow DuckDB to use (default 80% of available)",
-    type=int
+    type=int,
 )
 
 opts = parser.parse_args()
-db =  duckdb.connect(opts.duckdb_file)
+db = duckdb.connect(opts.duckdb_file)
 db.execute(f"set threads = {opts.max_cpus}")
 
 join_size = db.sql("select count(*) from arrivals").fetchone()[0]
@@ -95,18 +96,18 @@ delta_lat = lat2 - lat1
 
 hav_a = np.sin(delta_lat / 2) ** 2
 hav_b = np.sin(delta_lon / 2) ** 2
-distance_km = earth_radius_km * 2 * np.arcsin(
-    np.sqrt(hav_a + np.cos(lat1) * np.cos(lat2) * hav_b)
+distance_km = (
+    earth_radius_km
+    * 2
+    * np.arcsin(np.sqrt(hav_a + np.cos(lat1) * np.cos(lat2) * hav_b))
 )
-leg_distances = df.assign(
-    air_distance_km=distance_km
-)
-db.execute(
-    "create or replace table distances as select * from leg_distances"
-)
+leg_distances = df.assign(air_distance_km=distance_km)
+db.execute("create or replace table distances as select * from leg_distances")
 leg_distances.air_distance_km.describe()
 
-print("Adding distance information to `legs` (drops rows without geolocation or speed >= 250 km/h)")
+print(
+    "Adding distance information to `legs` (drops rows without geolocation or speed >= 250 km/h)"
+)
 db.execute("""
 create or replace table legs as 
 select 

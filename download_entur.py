@@ -111,9 +111,13 @@ for page_start, page_end in tqdm.tqdm(list(zip(page_boundaries, page_boundaries[
 
 quays_table = "ent-data-sharing-ext-prd.national_stop_registry.quays_last_version"
 
-quays = client.query(
-    f"select id, location_longitude, location_latitude from `{quays_table}`"
-).result().to_arrow()
+quays = (
+    client.query(
+        f"select id, location_longitude, location_latitude from `{quays_table}`"
+    )
+    .result()
+    .to_arrow()
+)
 
 db.execute("create table quays as select * from quays")
 stats = db.sql("""select
