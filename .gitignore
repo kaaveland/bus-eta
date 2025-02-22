@@ -8,3 +8,4 @@
 
 *.parquet
 .idea
+.ipynb_checkpoints
