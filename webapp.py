@@ -10,22 +10,75 @@ import numpy as np
 con = duckdb.connect(database=":memory:")
 con.execute("CREATE TABLE stop_stats AS SELECT * FROM 'stop_stats.parquet';")
 con.execute("CREATE TABLE leg_stats AS SELECT * FROM 'leg_stats.parquet';")
-# Could use this to allow filtering on stops visited by lineRef
-# con.execute("CREATE TABLE stop_line AS SELECT * FROM 'stop_line.parquet';")
+con.execute("CREATE TABLE stop_line AS SELECT * FROM 'stop_line.parquet';")
 
-df_year_month = con.sql("""
+with con.cursor() as cursor:
+    df_year_month = cursor.sql("""
     SELECT DISTINCT year, month
     FROM stop_stats
     WHERE (year, month) > (2023, 6)
     ORDER BY year ASC, month ASC
-""").df()
+    """).df()
 
+    about = (
+        cursor.sql("""
+        SELECT 
+      SUM(count) :: int as transits_seen
+    FROM leg_stats 
+    """)
+        .df()
+        .iloc[0]
+        .to_dict()
+    )
+
+    memory_usage = cursor.sql("""
+        SELECT ROUND(SUM(memory_usage_bytes :: double) / 1e9, 2)
+        FROM duckdb_memory()
+    """).fetchall()[0][0]
+
+    datapoints_by_year_month = cursor.sql("""
+    SELECT 
+      SUM(count) :: int as count,
+      MAKE_DATE(year, month, 1) as date
+    FROM leg_stats
+    GROUP BY year, month
+    ORDER BY year, month
+    """).df()
+
+    datapoints_by_hour = cursor.sql("""
+    SELECT 
+      SUM(count) :: int as count,
+      hour
+    FROM leg_stats
+    GROUP BY hour
+    ORDER BY hour
+    """).df()
+
+    unique_stops = (
+        cursor.sql("""
+    select distinct stop from stop_stats order by stop
+    """)
+        .df()["stop"]
+        .tolist()
+    )
+    unique_lines = (
+        cursor.sql("""
+    select distinct lineRef from stop_line order by lineRef
+    """)
+        .df()["lineRef"]
+        .tolist()
+    )
+
+    number_of_stop_combinations = cursor.sql(
+        "SELECT COUNT(DISTINCT (previous_stop, stop)) FROM leg_stats"
+    ) .fetchall()[0][0]
 
 year_month_values = [
     f"{row.year:04d}-{row.month:02d}" for _, row in df_year_month.iterrows()
 ]
 slider_marks = {i: label for i, label in enumerate(year_month_values)}
 hour_marks = {i: str(i) for i in range(24)}
+
 
 app = Dash(
     name="bus-eta",
@@ -131,13 +184,49 @@ app.layout = html.Div(
             value="map-tab",
             children=[
                 dcc.Tab(
-                    label="Map Visualization",
+                    label="Map",
                     value="map-tab",
                     children=[
                         dcc.Graph(id="map-figure"),
                     ],
                 ),
-                dcc.Tab(label="Graph Visualization", value="graph-tab"),
+                dcc.Tab(
+                    label="About the data set",
+                    value="about",
+                    children=[
+                        html.H2("Facts about the data set"),
+                        html.Ul(
+                            children=[
+                                html.Li(f"{len(unique_lines)} transit lines seen."),
+                                html.Li(f"{len(unique_stops)} transit stop places."),
+                                html.Li(f"{number_of_stop_combinations} stop-to-stop legs visible in map."),
+                                html.Li(
+                                    f"{about['transits_seen']} aggregated transit legs used."
+                                ),
+                                html.Li(f"{memory_usage}GB data in server memory."),
+                                html.Li("TODO: Insert download links"),
+                            ]
+                        ),
+                        dcc.Graph(
+                            id="by-date",
+                            figure=px.bar(
+                                datapoints_by_year_month,
+                                x="date",
+                                y="count",
+                                title="Datapoints by month",
+                            ),
+                        ),
+                        dcc.Graph(
+                            id="by-hour",
+                            figure=px.bar(
+                                datapoints_by_hour,
+                                x="hour",
+                                y="count",
+                                title="Datapoints by hour of day",
+                            ),
+                        ),
+                    ],
+                ),
             ],
         ),
         state,
