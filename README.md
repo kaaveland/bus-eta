@@ -3,10 +3,13 @@
 This repository is an exploration and visualization of the [Entur Real-Time Dataset](https://data.entur.no/domain/public-transport-data/product/realtime_siri_et/urn:li:container:1d391ef93913233c516cbadfb190dc65).
 I found this data set when I was looking for something to use, in order to get to know [DuckDB](https://duckdb.org/).
 
-It is a companion repository to a blogpost that's going to be published to [arktekk.no/blog](https://arktekk.no/blog) at some point. If you're reading this, maybe
-that's where you came from?
+It is a companion repository to a blogpost that's going to be published to [arktekk.no/blog](https://arktekk.no/blog) at some point. 
+If you're reading this, maybe that's where you came from?
 
-I meant for this to just be a quick and fun session to kill some time one evening, but it escalated a little bit, because it was _very_ fun.
+I meant for this to just be a quick and fun session to kill some time one evening, but it escalated a little bit,
+because it was _very_ fun. Overall, I spent every free evening I had for some 10-12 days, working on this. I'm
+thankful to have such an understanding family. It is definitely code on the prototype-stage, though. There are
+tons and tons of usability/UX problems.
 
 ## Setup
 
@@ -40,9 +43,17 @@ Run a script:
 uv run download_entur.py
 ```
 
+Run the webapp in development mode (requires extra steps, see Scripts and Dashboard app below):
+```shell
+uv run webapp.py
+```
+
 ## License
 
 MIT -- see [LICENSE.md](LICENSE.md). You can use this code for any purpose, and you do not have to attribute it to me.
+
+You also do not get to blame me if something in this repository becomes a black hole that 
+consumes absolutely all of your RAM.
 
 ## Data license
 
@@ -98,17 +109,34 @@ the docker image to run the app.
 
 I run this using docker-compose and a nginx reverse proxy at TODO: insert a link to deployment.
 
-You can use the docker image at TODO: set up ghcr.io/kaaveland/bus-eta. Feel free to copy my TODO: docker-compose.yml.
+You can use the docker image at [ghcr](https://github.com/kaaveland/bus-eta/pkgs/container/bus-eta),
+it bundles the data I extracted in [EnturRealtimeEDA.ipynb](./EnturRealtimeEDA.ipynb).
+
+Feel free to find inspiration in [docker-compose.yml](./docker-compose.yml) or [DEPLOY.md](./DEPLOY.md).
 
 Note that `uv run webapp.py` is not a suitable way to run this application for any sort of load. Put it behind
 [gunicorn](https://gunicorn.org/) or something else suitable. The docker image takes care of this already.
 
-NB! DuckDB is threaded on the C-level and puts all the data in-memory of the running process. If you want to run
-it with `gunicorn` in forking mode (`--workers > 1`), you should limit the number of threads that DuckDB can use,
-and make sure to use copy-on-write memory, or you'll get some really annoying problems.
+NB! This webapp puts a lot of data (> 500MB) in memory once it loads, so use `--preload` with `gunicorn`.
+This ensures faster startup and also since this memory is only written once, it can be shared with copy-on-write
+memory between the workers. This lets you run many workers without using a lot of RAM. gunicorn usually
+recommends 1-2 workers per CPU, but since DuckDB is also threaded on the C level, 2 workers per CPU may be a 
+little high.
 
 ## Contributions & tickets
 
 You're welcome to file tickets & issues. You're welcome to contribute patches. Just be aware that this was a
 hobby/passion project with a clear goal (learn DuckDB), so unless there's significant interest in making it
 into something more than a proof of concept, it is likely that I will stop working on it.
+
+## Where to next?
+
+As alluded to under the previous section, I've not decided whether to make something more of this yet. If I did,
+here are some things that _should_ be done:
+
+- Tons of usability bugs and annoyances to fix in the webapp.
+- Fix structural issues in the project, separate the scripts, notebooks and the webapp into different packages.
+- Try to refactor the webapp completely, separate out the visualizations into independent modules.
+- Add automated tests.
+- Set up a nightly job to fetch new data and update the app. This also requires introducing partitioning by date
+  in order to avoid aggregating through all the old data again.
