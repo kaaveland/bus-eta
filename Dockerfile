@@ -1,5 +1,5 @@
 FROM python:3.12-slim-bookworm
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/
 
 RUN useradd --create-home --home-dir /app --shell /usr/sbin/nologin webapp
 
@@ -8,8 +8,7 @@ RUN apt-get update && apt-get upgrade -y \
 
 ADD leg_stats.parquet stop_stats.parquet stop_line.parquet pyproject.toml *.py .python-version /app/
 WORKDIR /app
-RUN uv remove --no-cache jupyter google-cloud-bigquery-storage google-cloud-bigquery tqdm psutil \
-     && uv sync --no-cache
+RUN uv sync --no-cache
 
 USER webapp
 EXPOSE 8000

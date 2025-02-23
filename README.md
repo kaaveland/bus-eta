@@ -19,10 +19,16 @@ is good to know if you want to configure an editor or IDE to find the appropriat
 Short note on dependencies: For friendly setup, `pyproject.toml` is set up with a huge set of dependencies. If wanting 
 to use this for anything professional, I would recommend setting up 2 or 3 projects with different sets of dependencies.
 
-Install dependencies:
+Install dependencies, including jupyter (required for IDE-integration with notebooks):
 
 ```shell
-uv sync
+uv sync --all-extras
+```
+
+Install all dependencies for the scripts, but skip jupyter:
+
+```shell
+uv sync --extras=scripts
 ```
 
 Add a dependency:
@@ -34,7 +40,7 @@ uv add plotly
 Run jupyter:
 
 ```shell
-uv run jupyter
+uv run --with jupyter jupyter
 ```
 
 Run a script:

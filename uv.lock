@@ -166,17 +166,23 @@ dependencies = [
     { name = "dash" },
     { name = "db-dtypes" },
     { name = "duckdb" },
-    { name = "google-cloud-bigquery" },
-    { name = "google-cloud-bigquery-storage" },
     { name = "gunicorn" },
+    { name = "pandas" },
+    { name = "plotly" },
+    { name = "pyarrow" },
+]
+
+[package.optional-dependencies]
+dev = [
     { name = "jupysql" },
     { name = "jupyter" },
     { name = "notebook" },
-    { name = "pandas" },
-    { name = "plotly" },
-    { name = "psutil" },
-    { name = "pyarrow" },
     { name = "seaborn" },
+]
+scripts = [
+    { name = "google-cloud-bigquery" },
+    { name = "google-cloud-bigquery-storage" },
+    { name = "psutil" },
     { name = "tqdm" },
 ]
 
@@ -185,18 +191,18 @@ requires-dist = [
     { name = "dash", specifier = ">=2.18.2" },
     { name = "db-dtypes", specifier = ">=1.4.1" },
     { name = "duckdb", specifier = ">=1.2.0" },
-    { name = "google-cloud-bigquery", specifier = ">=3.29.0" },
-    { name = "google-cloud-bigquery-storage", specifier = ">=2.28.0" },
+    { name = "google-cloud-bigquery", marker = "extra == 'scripts'", specifier = ">=3.29.0" },
+    { name = "google-cloud-bigquery-storage", marker = "extra == 'scripts'", specifier = ">=2.28.0" },
     { name = "gunicorn", specifier = ">=23.0.0" },
-    { name = "jupysql", specifier = ">=0.10.17" },
-    { name = "jupyter", specifier = ">=1.1.1" },
-    { name = "notebook", specifier = ">=7.3.2" },
+    { name = "jupysql", marker = "extra == 'dev'", specifier = ">=0.10.17" },
+    { name = "jupyter", marker = "extra == 'dev'", specifier = ">=1.1.1" },
+    { name = "notebook", marker = "extra == 'dev'", specifier = ">=7.3.2" },
     { name = "pandas", specifier = ">=2.2.3" },
     { name = "plotly", specifier = ">=6.0.0" },
-    { name = "psutil", specifier = ">=7.0.0" },
+    { name = "psutil", marker = "extra == 'scripts'", specifier = ">=7.0.0" },
     { name = "pyarrow", specifier = ">=19.0.0" },
-    { name = "seaborn", specifier = ">=0.13.2" },
-    { name = "tqdm", specifier = ">=4.67.1" },
+    { name = "seaborn", marker = "extra == 'dev'", specifier = ">=0.13.2" },
+    { name = "tqdm", marker = "extra == 'scripts'", specifier = ">=4.67.1" },
 ]
 
 [[package]]
