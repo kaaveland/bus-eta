@@ -12,11 +12,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the repository
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Set up Docker CLI
       - name: Log in to GHCR
         uses: docker/login-action@v2
         with:
@@ -24,22 +22,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Step 3: Download data files
       - name: Download data files
         run: |
           for f in {leg_stats,stop_stats,stop_line}.parquet; do
               curl -o $f https://kaaveland-bus-eta-data.hel1.your-objectstorage.com/$f
           done
 
-      # Step 4: Build the Docker image
       - name: Build Docker image
         run: |
-          IMAGE_NAME=ghcr.io/${{ github.repository }}
-          docker build -t ${IMAGE_NAME}:${{ github.sha }} -t ${IMAGE_NAME}:latest .
-
-      # Step 5: Push the Docker image to GHCR
-      - name: Push Docker image
-        run: |
-          IMAGE_NAME=ghcr.io/${{ github.repository }}
-          docker push ${IMAGE_NAME}:${{ github.sha }} 
-          docker push ${IMAGE_NAME}:latest
+          version=${{ github.sha }}
+          docker buildx create --use
+          docker buildx build . \
+            --platform "linux/amd64,linux/arm64" \
+            -t ghcr.io/${{ github.repository }}:latest \
+            -t ghcr.io/${{ github.repository }}:$version \
+            --push
