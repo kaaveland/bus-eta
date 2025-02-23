@@ -7,6 +7,8 @@ Start the plotly dash webapp in development mode.
 # be split into one file per tab in the dashboard. I timeboxed this into two very hectic
 # weekend days to test as many ideas as possible.
 
+import os
+
 from dash import dcc, html, Input, Output, Dash, State
 from dash.exceptions import PreventUpdate
 from flask import Flask
@@ -14,7 +16,6 @@ import plotly.express as px
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 import duckdb
-
 server = Flask(__name__)
 
 
@@ -101,8 +102,11 @@ with db.cursor() as cursor:
         "SELECT COUNT(DISTINCT (previous_stop, stop)) FROM leg_stats"
     ).fetchall()[0][0]
 
+external_scripts = [
+    {'src': 'https://scripts.simpleanalyticscdn.com/latest.js', 'async': ''}
+] if 'SIMPLE_ANALYTICS' in os.environ else []
 
-app = Dash(name="bus-eta", title="Public transit study", server=server)
+app = Dash(name="bus-eta", title="Public transit study", server=server, external_scripts=external_scripts)
 
 year_month_values = [
     f"{row.year:04d}-{row.month:02d}" for _, row in df_year_month.iterrows()
@@ -677,7 +681,6 @@ def update_map_page(
 
     return fig
 
-
 # Root level / tabs
 app.layout = html.Div(
     [
@@ -701,7 +704,6 @@ app.layout = html.Div(
             ],
         ),
         state,
-        html.Footer(children=[html.P("")]),
     ]
 )
 
