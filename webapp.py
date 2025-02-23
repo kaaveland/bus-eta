@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 """
 Start the plotly dash webapp in development mode.
-
-NB! This file isn't pretty.
 """
+
+# NB! This file isn't pretty, it's hackathon quality at most. At the very least it should
+# be split into one file per tab in the dashboard. I timeboxed this into two very hectic
+# weekend days to test as many ideas as possible.
 
 from dash import dcc, html, Input, Output, Dash, State
 from dash.exceptions import PreventUpdate
@@ -251,7 +253,9 @@ about = dcc.Tab(
                 html.Li(
                     f"{number_of_stop_combinations} stop-to-stop legs visible in map."
                 ),
-                html.Li(f"{about['transits_seen']} aggregated transit legs used."),
+                html.Li(
+                    f"{about['transits_seen']} public transport stop place registrations used."
+                ),
                 html.Li(f"{memory_usage}GB data in server memory."),
                 html.Li("TODO: Insert download links"),
             ]
@@ -284,12 +288,36 @@ stop_tab = dcc.Tab(
         html.H2("Investigate traffic to a stop"),
         html.Label("Stop to investigate", htmlFor=stop_picker.id),
         stop_picker,
+        html.Div(id="one-stop-text"),
         dcc.Graph(id="one-stop-sources"),
         dcc.Graph(id="one-stop-stat"),
     ],
 )
 
-hover_template_hour_x = "%{x}:00-%{x}:59 total %{y}"
+
+@app.callback(Output("one-stop-text", "children"), Input(stop_picker.id, "value"))
+def show_stop_info(chosen_stop):
+    if not chosen_stop or chosen_stop not in unique_stops:
+        return html.P("Try searching for a stop. Start typing to clear the selection.")
+    with db.cursor() as cursor:
+        df = (
+            cursor.sql(
+                """
+        select 
+           stop,
+           first(map_lat) as latitude,
+           first(map_lon) as longitude,
+           sum(count) as registrations_total
+        from stop_stats
+        where stop = ?
+        group by stop
+        """,
+                params=(chosen_stop,),
+            )
+            .df()
+            .T
+        )
+    return html.Pre(str(df))
 
 
 @app.callback(
@@ -329,7 +357,7 @@ def render_traffic_sources(
                     y=subset["count"],
                     name=f"{previous}",
                     mode="lines+markers",
-                    hovertemplate=hover_template_hour_x,
+                    hovertemplate="%{x}:00-%{x}:59 total %{y}",
                 ),
                 row=1,
                 col=1,
@@ -408,12 +436,76 @@ leg_tab = dcc.Tab(
         html.H2("Investigate traffic through one leg"),
         html.Label("Leg to investigate"),
         leg_picker,
+        dcc.Graph(id="one-leg-count"),
+        dcc.Graph(id="one-leg-stat"),
     ],
 )
 
+
+@app.callback(
+    Output("one-leg-count", "figure"),
+    Output("one-leg-stat", "figure"),
+    Input(date_slider.id, "value"),
+    Input(stat_picker.id, "value"),
+    Input(leg_picker.id, "value"),
+)
+def render_stat_distribution_for_leg(year_month, stat, chosen_leg):
+    selected_label = year_month_values[year_month]
+    year, month = map(int, selected_label.split("-"))
+
+    if stat not in stat_labels:
+        raise ValueError(f"{stat} is not a permitted column")
+    column = f"{stat_labels[stat]}_stats"
+
+    if chosen_leg is None:
+        return (
+            px.scatter(title="Type a valid stop to stop to visualize"),
+            px.scatter(title="Type a valid stop to stop to visualize"),
+        )
+
+    previous, now = chosen_leg.split(" to ")
+
+    with db.cursor() as cursor:
+        df = cursor.sql(
+            f"""
+        SELECT
+             hour,
+             count,
+            ({column}['percentiles'])[1] as "10% percentile",
+            ({column}['percentiles'])[2] as "25% percentile",
+            ({column}['percentiles'])[3] as "50% percentile",
+            ({column}['percentiles'])[4] as "75% percentile",
+            ({column}['percentiles'])[5] as "90% percentile",
+        FROM leg_stats
+        WHERE year = ?
+          AND month = ?
+          AND previous_stop = ? AND stop = ?
+        ORDER BY hour
+        """,
+            params=(year, month, previous, now),
+        ).df()
+
+    quantiles = px.line(
+        df.drop(columns=["count"]).melt(id_vars="hour", value_name="seconds"),
+        x="hour",
+        y="seconds",
+        color="variable",
+        title=f"{stat.capitalize()} between {previous} and {now} in {year}-{month}",
+    )
+    counts = px.line(
+        df[["hour", "count"]].melt(id_vars="hour", value_name="Count"),
+        x="hour",
+        y="Count",
+        color="variable",
+        title=f"Total traffic between {previous} and {now} in {year}-{month} per hour",
+    )
+
+    return quantiles, counts
+
+
 line_tab = dcc.Tab(
     id="line-tab",
-    label="Line",
+    label="Line Map",
     children=[
         html.H2("Investigate traffic by one transit line"),
         html.Label("Line to investigate"),
@@ -515,22 +607,32 @@ def update_map_page(
         lat="latitude",
         lon="longitude",
         size="clamp_mean",
-        hover_data=[
-            "mean",
-            "count",
-            "rush_sensitivity",
-            "10% percentile",
-            "25% percentile",
-            "50% percentile",
-            "75% percentile",
-            "90% percentile",
-        ],
+        hover_data={
+            "clamp_mean": False,
+            "mean": True,
+            "count": True,
+            "rush_sensitivity": True,
+            "10% percentile": True,
+            "25% percentile": True,
+            "50% percentile": True,
+            "75% percentile": True,
+            "90% percentile": True,
+        },
         color="rush_sensitivity",
         color_continuous_scale="viridis_r",
         zoom=map_state["zoom"],
         center=(map_state["center"]),
-        title=f"{stat} in seconds for {year}-{month:02d} between {hour_value}:00-{hour_value}:59",
+        title=f"Average {stat.lower()} in seconds for {year}-{month:02d} between {hour_value}:00-{hour_value}:59",
         height=800,
+    )
+    fig.add_annotation(
+        text=f"Size represents average {stat.lower()} between {hour_value}:00-{hour_value}:59 for all days in the month",
+        xref="paper",
+        yref="paper",
+        x=0.5,
+        y=0,
+        font=dict(size=12),
+        showarrow=False,
     )
 
     return fig, map_state
