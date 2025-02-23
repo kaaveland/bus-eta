@@ -4,6 +4,7 @@ on:
   workflow_dispatch: # Trigger workflow manually
 
 permissions:
+  contents: read
   packages: write
 
 jobs:
