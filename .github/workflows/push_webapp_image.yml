@@ -37,4 +37,5 @@ jobs:
       - name: Push Docker image
         run: |
           IMAGE_NAME=ghcr.io/${{ github.repository }}
-          docker push ${IMAGE_NAME}:${{ github.sha }} ${IMAGE_NAME}:latest
+          docker push ${IMAGE_NAME}:${{ github.sha }} 
+          docker push ${IMAGE_NAME}:latest
