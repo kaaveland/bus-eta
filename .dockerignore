@@ -1,0 +1,8 @@
+*.db
+*.db.tmp
+*.ipynb
+.ipynb_checkpoints
+
+arrivals.parquet
+.venv
+.idea

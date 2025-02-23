@@ -1,0 +1,40 @@
+name: Build webapp image
+
+on:
+  workflow_dispatch: # Trigger workflow manually
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Docker CLI
+      - name: Log in to GHCR
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Step 3: Download data files
+      - name: Download data files
+        run: |
+          for f in {leg_stats,stop_stats,stop_line}.parquet; do
+              curl -o $f https://kaaveland-bus-eta-data.hel1.your-objectstorage.com/$f
+          done
+
+      # Step 4: Build the Docker image
+      - name: Build Docker image
+        run: |
+          IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
+          docker build -t ${IMAGE_NAME}:${{ github.sha }} .
+
+      # Step 5: Push the Docker image to GHCR
+      - name: Push Docker image
+        run: |
+          IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
+          docker push ${IMAGE_NAME}:${{ github.sha }}
