@@ -30,11 +30,11 @@ jobs:
       # Step 4: Build the Docker image
       - name: Build Docker image
         run: |
-          IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
-          docker build -t ${IMAGE_NAME}:${{ github.sha }} .
+          IMAGE_NAME=ghcr.io/${{ github.repository }}
+          docker build -t ${IMAGE_NAME}:${{ github.sha }} -t ${IMAGE_NAME}:latest .
 
       # Step 5: Push the Docker image to GHCR
       - name: Push Docker image
         run: |
-          IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
-          docker push ${IMAGE_NAME}:${{ github.sha }}
+          IMAGE_NAME=ghcr.io/${{ github.repository }}
+          docker push ${IMAGE_NAME}:${{ github.sha }} ${IMAGE_NAME}:latest
