@@ -236,13 +236,13 @@ Inside the `server` block where certbot has added `listen 443 ssl`, I add:
 
     location / {
         proxy_pass http://127.0.0.1:8000;
-	    proxy_http_version 1.1;
+        proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-	    limit_conn conn_limit_per_ip 20;
-	    limit_req zone=request_limit burst=20 nodelay;
+        limit_conn conn_limit_per_ip 20;
+        limit_req zone=request_limit burst=20 nodelay;
     }
 ```
 
@@ -252,6 +252,37 @@ At this point, I have [kollektivkart.arktekk.no](https://kollektivkart.arktekk.n
 
 ### Systemd setup
 
-TODO: I need the docker container to be managed by systemd, so it automatically starts on boot.
+I made a systemd unit file:
 
-Will take care of that tomorrow.
+```
+/etc/systemd/system/kollektivkart.service
+[Unit]
+Description=Kollectivkart Docker Compose service
+Requires=docker.service
+After=docker.service
+After=network.target
+
+[Service]
+Type=oneshot
+User=kollektivkart
+Group=kollektivkart
+WorkingDirectory=/home/kollektivkart
+
+ExecStart=/usr/bin/docker compose up -d
+ExecStop=/usr/bin/docker compose down
+
+RemainAfterExit=true
+
+[Install]
+WantedBy=multi-user.target
+
+```
+
+Then I ran these commands to enroll the service in systemd and make sure it comes back up after unattended reboots:
+
+```shell
+systemctl daemon-reload
+docker compose down
+systemctl enable kollektivkart
+systemctl start kollektivkart
+``
