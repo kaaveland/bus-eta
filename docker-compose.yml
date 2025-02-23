@@ -1,0 +1,19 @@
+version: '2'
+services:
+  gunicorn:
+    image: ghcr.io/kaaveland/bus-eta:6caa17f60c236c1e9f10250066d7ca2957e2f647
+    command:
+      - webapp:server
+      - --bind=0.0.0.0:8000
+      - --access-logfile=-
+      - --access-logformat="%(h)s %(l)s %(u)s %(t)s %(M)sms '%(r)s' %(s)s %(b)s '%(f)s' '%(a)s'"
+      # This loads everything into memory before calling fork(), giving us copy-on-write memory
+      - --preload
+      # Complete overkill for local, but I'm using this on a server too
+      - --workers=4
+      - --chdir=/app
+    restart: unless-stopped
+    mem_limit: 512m
+    user: webapp
+    ports:
+      - 8000:8000
