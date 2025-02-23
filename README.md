@@ -81,10 +81,18 @@ It resulted in a set of scripts that can be used to work with different slices o
 
 ### Dashboard app
 
-There's a plotly dash app that contains some visualizations in `webapp.py`. It requires `leg_stats.parquet`
-and `stop_stats.parquet`.
+There's a plotly dash app that contains some visualizations in `webapp.py`. It requires `leg_stats.parquet`, 
+`stop_stats.parquet` and `stop_line.parquet`. You can download them from my hetzner object storage, they're
+quite small (less than 100MB total):
 
-Run it with `uv run webapp.py` or build it with docker and run it.
+```shell
+for f in {leg_stats,stop_stats,stop_line}.parquet; do
+  curl -o $f https://kaaveland-bus-eta-data.hel1.your-objectstorage.com/$f
+done
+```
+
+Run it with `uv run webapp.py` or build it with docker and run it. These files are also necessary to build
+the docker image to run the app.
 
 ### Deployment
 
