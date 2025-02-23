@@ -19,4 +19,5 @@ dependencies = [
     "psutil>=7.0.0",
     "plotly>=6.0.0",
     "dash>=2.18.2",
+    "gunicorn>=23.0.0",
 ]

@@ -168,6 +168,7 @@ dependencies = [
     { name = "duckdb" },
     { name = "google-cloud-bigquery" },
     { name = "google-cloud-bigquery-storage" },
+    { name = "gunicorn" },
     { name = "jupysql" },
     { name = "jupyter" },
     { name = "notebook" },
@@ -186,6 +187,7 @@ requires-dist = [
     { name = "duckdb", specifier = ">=1.2.0" },
     { name = "google-cloud-bigquery", specifier = ">=3.29.0" },
     { name = "google-cloud-bigquery-storage", specifier = ">=2.28.0" },
+    { name = "gunicorn", specifier = ">=23.0.0" },
     { name = "jupysql", specifier = ">=0.10.17" },
     { name = "jupyter", specifier = ">=1.1.1" },
     { name = "notebook", specifier = ">=7.3.2" },
@@ -748,6 +750,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/4c/d1/2397797c810020eac424e1aac10fbdc5edb6b9b4ad6617e0ed53ca907653/grpcio_status-1.70.0.tar.gz", hash = "sha256:0e7b42816512433b18b9d764285ff029bde059e9d41f8fe10a60631bd8348101", size = 13681 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e6/34/49e558040e069feebac70cdd1b605f38738c0277ac5d38e2ce3d03e1b1ec/grpcio_status-1.70.0-py3-none-any.whl", hash = "sha256:fc5a2ae2b9b1c1969cc49f3262676e6854aa2398ec69cb5bd6c47cd501904a85", size = 14429 },
+]
+
+[[package]]
+name = "gunicorn"
+version = "23.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "packaging" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/34/72/9614c465dc206155d93eff0ca20d42e1e35afc533971379482de953521a4/gunicorn-23.0.0.tar.gz", hash = "sha256:f014447a0101dc57e294f6c18ca6b40227a4c90e9bdb586042628030cba004ec", size = 375031 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/cb/7d/6dac2a6e1eba33ee43f318edbed4ff29151a49b5d37f080aad1e6469bca4/gunicorn-23.0.0-py3-none-any.whl", hash = "sha256:ec400d38950de4dfd418cff8328b2c8faed0edb0d517d3394e457c317908ca4d", size = 85029 },
 ]
 
 [[package]]

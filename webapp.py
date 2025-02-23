@@ -9,10 +9,13 @@ Start the plotly dash webapp in development mode.
 
 from dash import dcc, html, Input, Output, Dash, State
 from dash.exceptions import PreventUpdate
+from flask import Flask
 import plotly.express as px
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 import duckdb
+
+server = Flask(__name__)
 
 
 def initialize_duckb():
@@ -99,10 +102,7 @@ with db.cursor() as cursor:
     ).fetchall()[0][0]
 
 
-app = Dash(
-    name="bus-eta",
-    title="Public transit study",
-)
+app = Dash(name="bus-eta", title="Public transit study", server=server)
 
 year_month_values = [
     f"{row.year:04d}-{row.month:02d}" for _, row in df_year_month.iterrows()
@@ -259,7 +259,34 @@ about = dcc.Tab(
                     f"{about['transits_seen']} public transport stop place registrations used."
                 ),
                 html.Li(f"{memory_usage}GB data in server memory."),
-                html.Li("TODO: Insert download links"),
+                html.Li("This app uses 3 tables that are available as downloads:"),
+                html.Li(
+                    children=[
+                        html.A(
+                            href="https://kaaveland-bus-eta-data.hel1.your-objectstorage.com/leg_stats.parquet",
+                            children="leg_stats.parquet",
+                        ),
+                        " contains aggregations on the from-stop to-stop level.",
+                    ]
+                ),
+                html.Li(
+                    children=[
+                        html.A(
+                            href="https://kaaveland-bus-eta-data.hel1.your-objectstorage.com/stop_stats.parquet",
+                            children="stop_stats.parquet",
+                        ),
+                        " contains aggregations on the stop level.",
+                    ]
+                ),
+                html.Li(
+                    children=[
+                        html.A(
+                            href="https://kaaveland-bus-eta-data.hel1.your-objectstorage.com/stop_line.parquet",
+                            children="stop_line.parquet",
+                        ),
+                        " maps services/lines to which stops they visited in the data set.",
+                    ]
+                ),
             ]
         ),
         dcc.Graph(
