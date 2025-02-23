@@ -5,15 +5,16 @@ services:
     command:
       - webapp:server
       - --bind=0.0.0.0:8000
-      - --access-logfile=-
-      - --access-logformat="%(h)s %(l)s %(u)s %(t)s %(M)sms '%(r)s' %(s)s %(b)s '%(f)s' '%(a)s'"
       # This loads everything into memory before calling fork(), giving us copy-on-write memory
       - --preload
       # Complete overkill for local, but I'm using this on a server too
       - --workers=4
       - --chdir=/app
     restart: unless-stopped
-    mem_limit: 512m
+    mem_limit: 768m
     user: webapp
     ports:
+      # Note: This is not what you want if you host it on a server, then you'll want to park it behind
+      # one of haproxy/nginx/apache/caddy and proxy to 127.0.0.1:8000
+      # - "127.0.0.1:8000:8000"
       - 8000:8000
