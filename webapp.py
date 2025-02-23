@@ -83,6 +83,14 @@ with db.cursor() as cursor:
         .df()["lineRef"]
         .tolist()
     )
+    unique_legs = (
+        cursor.sql(
+            "select distinct previous_stop || ' to ' || stop as leg "
+            "from leg_stats order by previous_stop, stop"
+        )
+        .df()["leg"]
+        .tolist()
+    )
 
     number_of_stop_combinations = cursor.sql(
         "SELECT COUNT(DISTINCT (previous_stop, stop)) FROM leg_stats"
@@ -160,7 +168,7 @@ def complete_stop_options(search_value):
     return {
         stop: stop
         for stop in unique_stops
-        if stop is not None and stop.startswith(search_value)
+        if stop is not None and search_value.lower() in stop.lower()
     }
 
 
@@ -169,7 +177,11 @@ def complete_leg_options(search_value):
     if not search_value:
         raise PreventUpdate
 
-    pass
+    return {
+        leg: leg
+        for leg in unique_legs
+        if leg is not None and search_value.lower() in leg.lower()
+    }
 
 
 @app.callback(Output(line_picker.id, "options"), Input(line_picker.id, "search_value"))
@@ -177,7 +189,9 @@ def complete_line_options(search_value):
     if not search_value:
         raise PreventUpdate
     return {
-        line: line for line in unique_lines if line is not None and search_value in line
+        line: line
+        for line in unique_lines
+        if line is not None and search_value.lower() in line.lower()
     }
 
 
@@ -202,16 +216,18 @@ top = [
     html.Ul(
         children=[
             html.Li(
-                "Deviation is number of seconds longer than scheduled it took to go from one stop to the next"
+                "Deviation is how much longer it actually took to get from one stop to the next compared to the scheduled time."
             ),
             html.Li(
-                "Delay between two stops is the number of seconds after schedule overall for a transit"
+                "Delay is the total number of seconds by which the vehicle is running late when it arrives at the next stop "
+                "(i.e., how far behind schedule it is overall at that point). It is equal to the accumulated deviation up to that stop."
             ),
             html.Li(
-                "Actual duration between two stops is the time it takes for a transit to move between them"
+                "Actual duration is the real time it takes (in seconds or minutes) for the vehicle to travel from one stop to another."
             ),
             html.Li(
-                "Rush sensitivity is a ratio of actual duration for an hour divided by typical duration, between stops"
+                "Rush sensitivity is a measure that shows how travel time increases during busy hours. It’s calculated by taking the actual "
+                "travel time during rush hour and dividing it by the usual (non-rush) travel time."
             ),
         ]
     ),
@@ -273,6 +289,8 @@ stop_tab = dcc.Tab(
     ],
 )
 
+hover_template_hour_x = "%{x}:00-%{x}:59 total %{y}"
+
 
 @app.callback(
     Output("one-stop-sources", "figure"),
@@ -284,7 +302,7 @@ def render_traffic_sources(
     chosen_stop,
 ):
     selected_label = year_month_values[year_month_idx]
-    sel_year, sel_month = map(int, selected_label.split("-"))
+    year, month = map(int, selected_label.split("-"))
 
     with db.cursor() as cursor:
         df = cursor.sql(
@@ -296,13 +314,13 @@ def render_traffic_sources(
         from leg_stats
         where year = ? and month = ? and stop = ? 
         """,
-            params=(sel_year, sel_month, chosen_stop),
+            params=(year, month, chosen_stop),
         ).df()
 
     if chosen_stop is None:
         return px.scatter(title="Provide a valid stop")
     else:
-        fig = make_subplots(1, 1, y_title="Transits observed", x_title="Hour")
+        fig = make_subplots(1, 1, y_title=f"Total in {year}-{month}", x_title="Hour")
         for previous in df.previous_stop.unique():
             subset = df.loc[df.previous_stop == previous]
             fig.add_trace(
@@ -311,11 +329,14 @@ def render_traffic_sources(
                     y=subset["count"],
                     name=f"{previous}",
                     mode="lines+markers",
+                    hovertemplate=hover_template_hour_x,
                 ),
                 row=1,
                 col=1,
             )
-        fig.update_layout(title_text="Transits seen by previous stop")
+        fig.update_layout(
+            title_text=f"Transits counted at {chosen_stop} in {year}-{month}"
+        )
         return fig
 
 
@@ -331,7 +352,7 @@ def render_traffic_sources(
     chosen_stop,
 ):
     selected_label = year_month_values[year_month_idx]
-    sel_year, sel_month = map(int, selected_label.split("-"))
+    year, month = map(int, selected_label.split("-"))
 
     if stat not in stat_labels:
         raise ValueError(f"{stat} is not a permitted column")
@@ -348,7 +369,7 @@ def render_traffic_sources(
         from leg_stats
         where year = ? and month = ? and stop = ? 
         """,
-                params=(sel_year, sel_month, chosen_stop),
+                params=(year, month, chosen_stop),
             )
             .df()
             .melt(id_vars=["previous_stop", "hour"])
@@ -365,13 +386,18 @@ def render_traffic_sources(
                 go.Scatter(
                     x=subset["hour"],
                     y=subset[stat],
-                    name=f"{previous}",
+                    name=f"{previous} to {chosen_stop}",
                     mode="lines+markers",
+                    hovertemplate="%{x}:00-%{x}:59: %{y} seconds",
                 ),
                 row=1,
                 col=1,
             )
-        fig.update_layout(title_text=f"{stat}: mean seconds by previous stop")
+        # My wife forced me to do this, don't blame me
+        adjective = "Average accumulated" if stat.lower() == "delay" else "Average"
+        fig.update_layout(
+            title_text=f"{adjective} {stat.lower()} in seconds in {year}-{month}"
+        )
         return fig
 
 
@@ -440,7 +466,7 @@ def update_map_page(
     map_state,
 ):
     selected_label = year_month_values[year_month_slider_idx]
-    sel_year, sel_month = map(int, selected_label.split("-"))
+    year, month = map(int, selected_label.split("-"))
 
     if stat not in stat_labels:
         raise ValueError(f"{stat} is not a permitted column")
@@ -450,8 +476,8 @@ def update_map_page(
     query = f"""
         SELECT
             previous_stop || ' to ' || stop as leg, 
-            map_lat, 
-            map_lon, 
+            map_lat as latitude, 
+            map_lon as longitude, 
             count,
             {column}['mean'] as mean,
             {column}['min'] as min,
@@ -473,7 +499,7 @@ def update_map_page(
     """
     with db.cursor() as curs:
         df = (
-            curs.execute(query, (sel_year, sel_month, hour_value))
+            curs.execute(query, (year, month, hour_value))
             .fetchdf()
             .assign(clamp_mean=lambda df: df["mean"].clip(lower=1))
         )
@@ -486,8 +512,8 @@ def update_map_page(
     fig = px.scatter_map(
         df,
         hover_name="leg",
-        lat="map_lat",
-        lon="map_lon",
+        lat="latitude",
+        lon="longitude",
         size="clamp_mean",
         hover_data=[
             "mean",
@@ -500,10 +526,10 @@ def update_map_page(
             "90% percentile",
         ],
         color="rush_sensitivity",
-        color_continuous_scale="blackbody_r",
+        color_continuous_scale="viridis_r",
         zoom=map_state["zoom"],
         center=(map_state["center"]),
-        title=f"{stat} in seconds for {sel_year}/{sel_month:02d} between {hour_value}:00-{hour_value}:59",
+        title=f"{stat} in seconds for {year}-{month:02d} between {hour_value}:00-{hour_value}:59",
         height=800,
     )
 
