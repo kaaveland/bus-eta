@@ -3,6 +3,9 @@ name: Build webapp image
 on:
   workflow_dispatch: # Trigger workflow manually
 
+permissions:
+  packages: write
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
