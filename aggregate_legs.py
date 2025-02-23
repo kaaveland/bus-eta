@@ -104,8 +104,8 @@ db.sql("""
 create or replace table stop_line as
 select
   lineRef,
-  previous_stop,
-  stop,
+  previous_stop_name as previous_stop,
+  stop_name as stop,
   extract(year from time) as year,
   extract(month from time) as month,
   extract(hour from time) as hour

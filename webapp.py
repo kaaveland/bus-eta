@@ -229,7 +229,9 @@ top = [
             ),
             html.Li(
                 "Rush sensitivity is a measure that shows how travel time increases during busy hours. It’s calculated by taking the actual "
-                "travel time during rush hour and dividing it by the usual (non-rush) travel time."
+                "travel time during rush hour and dividing it by the usual (non-rush) travel time. "
+                "Intuitively, a rush sensitivity of 2 means that travel between two stops takes twice as much time during rush "
+                "traffic."
             ),
         ]
     ),
@@ -436,10 +438,48 @@ leg_tab = dcc.Tab(
         html.H2("Investigate traffic through one leg"),
         html.Label("Leg to investigate"),
         leg_picker,
+        html.Div(id="one-leg-text"),
         dcc.Graph(id="one-leg-count"),
         dcc.Graph(id="one-leg-stat"),
     ],
 )
+
+
+@app.callback(
+    Output("one-leg-text", "children"),
+    Input(date_slider.id, "value"),
+    Input(leg_picker.id, "value"),
+)
+def render_leg_text(year_month, chosen_leg):
+    if chosen_leg is None:
+        return html.P(
+            "Try searching for a leg by entering stop names. Start typing to clear the selection."
+        )
+    selected_label = year_month_values[year_month]
+    year, month = map(int, selected_label.split("-"))
+    previous, now = chosen_leg.split(" to ")
+    with db.cursor() as cursor:
+        df = (
+            cursor.sql(
+                f"""
+        SELECT
+             sum(count) as count,
+             first(air_distance_km) as air_distance_km,
+             map_lat as latidute,
+             map_lon as longitude
+        FROM leg_stats
+        WHERE year = ?
+          AND month = ?
+          AND previous_stop = ? AND stop = ?
+        GROUP BY ALL
+        LIMIT 1
+        """,
+                params=(year, month, previous, now),
+            )
+            .df()
+            .T
+        )
+    return html.Pre(str(df))
 
 
 @app.callback(
@@ -510,8 +550,106 @@ line_tab = dcc.Tab(
         html.H2("Investigate traffic by one transit line"),
         html.Label("Line to investigate"),
         line_picker,
+        dcc.Graph("line-map"),
     ],
 )
+
+
+@app.callback(
+    Output("line-map", "figure"),
+    Input(date_slider.id, "value"),
+    Input(hour_slider.id, "value"),
+    Input(stat_picker.id, "value"),
+    Input(line_picker.id, "value"),
+)
+def update_map_page(
+    year_month_slider_idx,
+    hour_value,
+    stat,
+    chosen_line,
+):
+    selected_label = year_month_values[year_month_slider_idx]
+    year, month = map(int, selected_label.split("-"))
+
+    if stat not in stat_labels:
+        raise ValueError(f"{stat} is not a permitted column")
+
+    if chosen_line not in unique_lines:
+        return px.scatter(title="You must choose a line to see a map here.")
+
+    column = f"{stat_labels[stat]}_stats"
+
+    query = f"""
+        SELECT
+            previous_stop || ' to ' || stop as leg, 
+            map_lat as latitude, 
+            map_lon as longitude, 
+            count,
+            {column}['mean'] as mean,
+            {column}['min'] as min,
+            ({column}['percentiles'])[1] as "10% percentile",
+            ({column}['percentiles'])[2] as "25% percentile",
+            ({column}['percentiles'])[3] as "50% percentile",
+            ({column}['percentiles'])[4] as "75% percentile",
+            ({column}['percentiles'])[5] as "90% percentile",
+            {column}['max'] as max,
+            least(3, round(
+                (actual_duration_stats['percentiles'])[4] / median(
+                   (actual_duration_stats['percentiles'])[2]) over (
+                   partition by previous_stop, stop, year, month
+            ), 2)) as rush_sensitivity
+        FROM leg_stats JOIN stop_line using (previous_stop, stop, year, month, hour)
+        WHERE year = ?
+          AND month = ?
+          AND hour = ?
+          AND lineRef = ?
+    """
+    with db.cursor() as curs:
+        df = (
+            curs.execute(query, (year, month, hour_value, chosen_line))
+            .fetchdf()
+            .assign(clamp_mean=lambda df: df["mean"].clip(lower=1))
+        )
+
+    lat, lon = df.latitude.median(), df.longitude.median()
+
+    fig = px.scatter_map(
+        df,
+        hover_name="leg",
+        lat="latitude",
+        lon="longitude",
+        size="clamp_mean",
+        hover_data={
+            "clamp_mean": False,
+            "mean": True,
+            "count": True,
+            "rush_sensitivity": True,
+            "10% percentile": True,
+            "25% percentile": True,
+            "50% percentile": True,
+            "75% percentile": True,
+            "90% percentile": True,
+        },
+        color="rush_sensitivity",
+        color_continuous_scale="viridis_r",
+        zoom=11,
+        center=dict(lat=lat, lon=lon),
+        title=f"Average {stat.lower()} in seconds for {chosen_line} {year}-{month:02d} between {hour_value}:00-{hour_value}:59",
+        height=800,
+    )
+    fig.update_layout()
+    fig.add_annotation(
+        text=f"Size represents average {stat.lower()} between {hour_value}:00-{hour_value}:59 for all days in the month",
+        xref="paper",
+        yref="paper",
+        x=0.5,
+        y=0,
+        font=dict(size=12),
+        showarrow=False,
+    )
+
+    return fig
+
 
 # Root level / tabs
 app.layout = html.Div(
