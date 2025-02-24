@@ -3,8 +3,8 @@
 This repository is an exploration and visualization of the [Entur Real-Time Dataset](https://data.entur.no/domain/public-transport-data/product/realtime_siri_et/urn:li:container:1d391ef93913233c516cbadfb190dc65).
 I found this data set when I was looking for something to use, in order to get to know [DuckDB](https://duckdb.org/).
 
-It is a companion repository to a blogpost that's going to be published to [arktekk.no/blog](https://arktekk.no/blog) at some point. 
-If you're reading this, maybe that's where you came from?
+It is a companion repository to a blogpost that's going to be published to [arktekk.no/blog](https://arktekk.no/blogs/2025_entur_realtimedataset)
+at some point. If you're reading this, maybe that's where you came from?
 
 I meant for this to just be a quick and fun session to kill some time one evening, but it escalated a little bit,
 because it was _very_ fun. Overall, I spent every free evening I had for some 10-12 days, working on this. I'm

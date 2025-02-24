@@ -135,7 +135,7 @@ date_slider = dcc.Slider(
 hour_marks = {i: str(i) for i in range(24)}
 
 hour_slider = dcc.Slider(
-    id="hour-slider", min=0, max=23, step=1, marks=hour_marks, value=7, included=False
+    id="hour-slider", min=0, max=23, step=1, marks=hour_marks, value=15, included=False
 )
 stat_labels = {
     "deviation": "Deviation",
@@ -197,15 +197,17 @@ def complete_line_options(search_value):
     }
 
 
-top = [
-    html.H1("Public transit study"),
-    html.P(children=["Explanation of terms used on this page:"]),
+explanation = dcc.Tab(
+    value='explanation',
+    label='Explanation of terms',
+    children=[
+    html.H2(children=["Explanation of terms used on this page"]),
     html.Ul(
         children=[
             html.Li(
-                "A Leg is a travel from one stop to the very next stop. The start of a leg is the arrival time at "
+                "A Leg is a travel from one stop to the next stop in the schedule. The start of a leg is the arrival time at "
                 "the first stop. The end of a leg is the arrival time at the next stop. The markers in the maps "
-                "in this dashboard show data about all public transportation that has travelled that leg (all lines). "
+                "in this dashboard show data about all public transportation that have travelled that leg (all lines). "
                 "The markers are placed near the start of the leg."
             ),
             html.Li(
@@ -216,7 +218,7 @@ top = [
                 "(i.e., how far behind schedule it is overall at that point). It is equal to the accumulated deviation up to that stop."
             ),
             html.Li(
-                "Actual duration is the real time it takes (in seconds or minutes) for the vehicle to travel from one stop to another."
+                "Actual duration is the real time it takes (in seconds) for the vehicle to travel from one stop to another."
             ),
             html.Li(
                 "Rush sensitivity is a measure that shows how travel time increases during busy hours. It’s calculated by taking the actual "
@@ -232,6 +234,10 @@ top = [
             "observed at or between stops during the selected year and month, in the chosen hour of day."
         ]
     ),
+])
+
+top = [
+    html.H1("Public transit study")
 ]
 
 bottom = html.Div(children=[
@@ -246,7 +252,7 @@ bottom = html.Div(children=[
             ),
             " under the MIT license.",
             " There's a blog post at the ",
-            html.A(href="https://arktekk.no/blog", children="Arktekk blog"),
+            html.A(href="https://arktekk.no/blogs/2025_entur_realtimedataset", children="Arktekk blog"),
             " describing the making of this dashboard.",
         ]
     ),
@@ -616,6 +622,7 @@ def update_map_page(
             map_lon as longitude, 
             count,
             (struct_extract(stats, $choice))['mean'] as mean,
+            greatest(1, (struct_extract(stats, $choice))['mean']) as clamp_mean,
             (struct_extract(stats, $choice))['min'] as min,
             ((struct_extract(stats, $choice)).percentiles)[1] as "10% percentile",
             ((struct_extract(stats, $choice)).percentiles)[2] as "25% percentile",
@@ -639,7 +646,6 @@ def update_map_page(
             curs.execute(query,
                          dict(year=year, month=month, hour=hour_value, line=chosen_line, choice=stat))
             .fetchdf()
-            .assign(clamp_mean=lambda df: df["mean"].clip(lower=1))
         )
 
     lat, lon = df.latitude.median(), df.longitude.median()
@@ -690,6 +696,7 @@ app.layout = html.Div(
             id="tabs",
             value="map-tab",
             children=[
+                explanation,
                 dcc.Tab(
                     label="Map",
                     value="map-tab",
@@ -735,6 +742,7 @@ def update_map_page(
             map_lon as longitude, 
             count,
             (struct_extract(stats, $choice))['mean'] as mean,
+            greatest(1, (struct_extract(stats, $choice))['mean']) as clamp_mean,
             (struct_extract(stats, $choice))['min'] as min,
             ((struct_extract(stats, $choice)).percentiles)[1] as "10% percentile",
             ((struct_extract(stats, $choice)).percentiles)[2] as "25% percentile",
@@ -756,7 +764,6 @@ def update_map_page(
         df = (
             curs.execute(query, dict(year=year, month=month, hour=hour_value, choice=stat))
             .fetchdf()
-            .assign(clamp_mean=lambda df: df["mean"].clip(lower=1))
         )
 
     if relayout_data and "map.center" in relayout_data:
