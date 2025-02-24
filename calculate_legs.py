@@ -73,7 +73,7 @@ select
     prev_quay.location_latitude as prev_lat,
     ul.stop,
     cur_quay.location_longitude as now_lon,
-    cur_quay.location_latitude as now_lat,
+    cur_quay.location_latitude as now_lat
 from unique_legs ul
     join quays prev_quay on ul.previous_stop = prev_quay.id
     join quays cur_quay on ul.stop = cur_quay.id

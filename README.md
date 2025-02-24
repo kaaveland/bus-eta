@@ -113,7 +113,7 @@ the docker image to run the app.
 
 ### Deployment
 
-I run this using docker-compose and a nginx reverse proxy at TODO: insert a link to deployment.
+I run this using docker-compose and a nginx reverse proxy at [kollektivkart.arktekk.no](https://kollektivkart.arktekk.no).
 
 You can use the docker image at [ghcr](https://github.com/kaaveland/bus-eta/pkgs/container/bus-eta),
 it bundles the data I extracted in [EnturRealtimeEDA.ipynb](./EnturRealtimeEDA.ipynb).

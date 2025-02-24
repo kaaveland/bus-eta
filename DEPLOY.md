@@ -31,13 +31,15 @@ mc cp stop_stats.parquet bus-eta/kaaveland-bus-eta-data/stop_stats.parquet
 
 I clickopsed a server too. I set it up with a firewall that permits port 22 only from my IP,
 but port 80 and 443 from the rest of the world. I won't be able to ssh from everywhere,
-but if something's wrong I can sign into the Hetzner cloud console and add another IP to
-whitelist.
+but if something's wrong I can sign in to the Hetzner cloud console and add another IP to
+the whitelist.
 
 I selected ubuntu 24.04.2. I went with a shared CPU machine. It looks easy to change to a
-dedicated one if I change my mind. This machine is about 7 euro a month. I plan to move 
-some things from an american cloud vendor to this server too. If the server doesn't have
-terrible noisy neighbour-problems, it is a very reasonable price.
+dedicated one if I change my mind. This machine is about 7 euro a month for 4VCPus and 8GB RAM.
+I plan to move some things from an american cloud vendor to this server too. If the server 
+doesn't have terrible noisy neighbour-problems, it is a very reasonable price. I should be
+able to move all the things I run elsewhere to this machine, which already pays most of the
+bill.
 
 The first thing I did was to upgrade all packages:
 
@@ -67,8 +69,8 @@ unattended-upgrades/noble,now 2.9.1+nmu4ubuntu1 all [installed]
 
 But I need the machine to restart now and then. 
 
-I can configure things in `/etc/apt/apt.conf.d/50unattended-upgrades`. I found and uncommented these
-lines:
+I can configure things in `/etc/apt/apt.conf.d/50unattended-upgrades`. I found and 
+uncommented these lines:
 
 ```
 // Automatically reboot *WITHOUT CONFIRMATION* if
@@ -88,7 +90,8 @@ Unattended-Upgrade::Automatic-Reboot-Time "02:00";
 Unattended-Upgrade::SyslogEnable "false";
 ```
 
-This seems like it should do what I want.
+I set automatic reboot and syslog to true and saved it. This seems like it should 
+do what I want. 
 
 This command tells me that the unattended-upgrades package is enabled:
 
@@ -131,7 +134,7 @@ This is enough to get certbot started:
 certbot --nginx -d kollektivkart.kaveland.no -d kollektivkart.arktekk.no
 ```
 
-It prompts me for email address and accept the terms, it installs the certificate.
+It prompts me for email address and to accept the terms, it installs the certificate.
 
 I remove the default site:
 
@@ -278,11 +281,14 @@ WantedBy=multi-user.target
 
 ```
 
-Then I ran these commands to enroll the service in systemd and make sure it comes back up after unattended reboots:
+Then I ran these commands to enroll the service in systemd and make sure it comes back up
+after unattended reboots:
 
 ```shell
 systemctl daemon-reload
 docker compose down
 systemctl enable kollektivkart
 systemctl start kollektivkart
-``
+```
+
+Next, I just test that, by rebooting.

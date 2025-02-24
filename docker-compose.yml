@@ -1,6 +1,6 @@
 services:
   gunicorn:
-    image: ghcr.io/kaaveland/bus-eta:6caa17f60c236c1e9f10250066d7ca2957e2f647
+    image: ghcr.io/kaaveland/bus-eta:latest
 
     command:
       - webapp:server

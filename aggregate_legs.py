@@ -49,7 +49,7 @@ def aggregations(col: str) -> str:
      'median': median({col}),
      'mean': round(mean({col})),
      'stddev': round(stddev({col}))
-    }} as {col}_stats
+    }}
 """
 
 
@@ -70,9 +70,11 @@ select
     first(prev_lat) as prev_lat,
     first(now_lon) * .01 + first(prev_lon) * .99 as map_lon,
     first(now_lat) * .01 + first(prev_lat) * .99 as map_lat,
-    {aggregations('actual_duration')},
-    {aggregations('delay')},
-    {aggregations('deviation')}
+    {{
+      'actual_duration': {aggregations('actual_duration')},
+      'delay': {aggregations('delay')},
+      'deviation': {aggregations('deviation')}
+    }} as stats
 from legs
 group by stop_name, previous_stop_name, year, month, hour
 having count(*) >= 28 -- require at least daily data
@@ -91,8 +93,10 @@ select
     count(*) as count,
     first(now_lon) as map_lon,
     first(now_lat) as map_lat,
-    {aggregations('delay')},
-    {aggregations('deviation')}
+    {{
+      'delay': {aggregations('delay')},
+      'deviation': {aggregations('deviation')},
+    }} as stats
 from legs
 group by stop_name, year, month, hour
 having count(*) >= 28 -- require at least daily data

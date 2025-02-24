@@ -116,14 +116,9 @@ year_month_values = [
 state = dcc.Store(
     id="state",
     data=dict(
-        year_month=len(year_month_values) - 1,
-        hour=7,
         zoom=10,
         # This centers near Trondheim (median lat and lon from dataset)
         center=dict(lat=63.405012, lon=10.429692),
-        stat="deviation",
-        chosen_stop=None,
-        chosen_leg=None,
     ),
 )
 
@@ -135,19 +130,20 @@ date_slider = dcc.Slider(
     step=1,
     marks={i: label for i, label in enumerate(year_month_values)},
     value=len(year_month_values) - 1,
+    included=False
 )
 hour_marks = {i: str(i) for i in range(24)}
 
 hour_slider = dcc.Slider(
-    id="hour-slider", min=0, max=23, step=1, marks=hour_marks, value=7
+    id="hour-slider", min=0, max=23, step=1, marks=hour_marks, value=7, included=False
 )
 stat_labels = {
-    "Deviation": "deviation",
-    "Delay": "delay",
-    "Actual Duration": "actual_duration",
+    "deviation": "Deviation",
+    "delay": "Delay",
+    "actual_duration": "Actual duration",
 }
 stat_picker = dcc.RadioItems(
-    id="stat-picker", options=list(stat_labels), value="Deviation", inline=True
+    id="stat-picker", options=stat_labels, value="deviation", inline=True
 )
 
 global_inputs = [
@@ -203,24 +199,15 @@ def complete_line_options(search_value):
 
 top = [
     html.H1("Public transit study"),
-    html.P(
-        children=[
-            "All data is from ",
-            html.A(href="https://data.entur.no", children="Entur"),
-            " open data sets. Source code and exploratory analysis available at ",
-            html.A(
-                href="https://github.com/kaaveland/bus-eta",
-                children="github",
-            ),
-            " under the MIT license.",
-            " There's a blog post at the ",
-            html.A(href="https://arktekk.no/blog", children="Arktekk blog"),
-            " describing the making of this dashboard.",
-        ]
-    ),
-    html.P(children=["Terms used:"]),
+    html.P(children=["Explanation of terms used on this page:"]),
     html.Ul(
         children=[
+            html.Li(
+                "A Leg is a travel from one stop to the very next stop. The start of a leg is the arrival time at "
+                "the first stop. The end of a leg is the arrival time at the next stop. The markers in the maps "
+                "in this dashboard show data about all public transportation that has travelled that leg (all lines). "
+                "The markers are placed near the start of the leg."
+            ),
             html.Li(
                 "Deviation is how much longer it actually took to get from one stop to the next compared to the scheduled time."
             ),
@@ -246,6 +233,24 @@ top = [
         ]
     ),
 ]
+
+bottom = html.Div(children=[
+    html.P(
+        children=[
+            "All data is from ",
+            html.A(href="https://data.entur.no", children="Entur"),
+            " open data sets. Source code and exploratory analysis available at ",
+            html.A(
+                href="https://github.com/kaaveland/bus-eta",
+                children="github",
+            ),
+            " under the MIT license.",
+            " There's a blog post at the ",
+            html.A(href="https://arktekk.no/blog", children="Arktekk blog"),
+            " describing the making of this dashboard.",
+        ]
+    ),
+])
 
 about = dcc.Tab(
     label="About the data set",
@@ -415,26 +420,22 @@ def render_traffic_sources(
     selected_label = year_month_values[year_month_idx]
     year, month = map(int, selected_label.split("-"))
 
-    if stat not in stat_labels:
-        raise ValueError(f"{stat} is not a permitted column")
-    column = f"{stat_labels[stat]}_stats"
-
     with db.cursor() as cursor:
         df = (
             cursor.sql(
-                f"""
+                """
         select
            previous_stop,
            hour,
-           {column}['mean'] as mean
+           (struct_extract(stats, $choice)).mean as mean
         from leg_stats
-        where year = ? and month = ? and stop = ? 
+        where year = $year and month = $month and stop = $stop 
         """,
-                params=(year, month, chosen_stop),
+                params=dict(year=year, month=month, stop=chosen_stop, choice=stat),
             )
             .df()
             .melt(id_vars=["previous_stop", "hour"])
-            .rename(columns={"value": stat})
+            .rename(columns={"value": stat_labels[stat]})
         )
 
     if chosen_stop is None:
@@ -446,7 +447,7 @@ def render_traffic_sources(
             fig.add_trace(
                 go.Scatter(
                     x=subset["hour"],
-                    y=subset[stat],
+                    y=subset[stat_labels[stat]],
                     name=f"{previous} to {chosen_stop}",
                     mode="lines+markers",
                     hovertemplate="%{x}:00-%{x}:59: %{y} seconds",
@@ -492,20 +493,20 @@ def render_leg_text(year_month, chosen_leg):
     with db.cursor() as cursor:
         df = (
             cursor.sql(
-                f"""
+                """
         SELECT
              sum(count) as count,
              first(air_distance_km) as air_distance_km,
              map_lat as latidute,
              map_lon as longitude
         FROM leg_stats
-        WHERE year = ?
-          AND month = ?
-          AND previous_stop = ? AND stop = ?
+        WHERE year = $year
+          AND month = $month
+          AND previous_stop = $previous AND stop = $stop
         GROUP BY ALL
         LIMIT 1
         """,
-                params=(year, month, previous, now),
+                params=dict(year=year, month=month, previous=previous, stop=now),
             )
             .df()
             .T
@@ -524,10 +525,6 @@ def render_stat_distribution_for_leg(year_month, stat, chosen_leg):
     selected_label = year_month_values[year_month]
     year, month = map(int, selected_label.split("-"))
 
-    if stat not in stat_labels:
-        raise ValueError(f"{stat} is not a permitted column")
-    column = f"{stat_labels[stat]}_stats"
-
     if chosen_leg is None:
         return (
             px.scatter(title="Type a valid stop to stop to visualize"),
@@ -538,22 +535,22 @@ def render_stat_distribution_for_leg(year_month, stat, chosen_leg):
 
     with db.cursor() as cursor:
         df = cursor.sql(
-            f"""
+            """
         SELECT
              hour,
              count,
-            ({column}['percentiles'])[1] as "10% percentile",
-            ({column}['percentiles'])[2] as "25% percentile",
-            ({column}['percentiles'])[3] as "50% percentile",
-            ({column}['percentiles'])[4] as "75% percentile",
-            ({column}['percentiles'])[5] as "90% percentile",
+            (stats[$choice].percentiles)[1] as "10% percentile",
+            (stats[$choice].percentiles)[2] as "25% percentile",
+            (stats[$choice].percentiles)[3] as "50% percentile",
+            (stats[$choice].percentiles)[4] as "75% percentile",
+            (stats[$choice].percentiles)[5] as "90% percentile",
         FROM leg_stats
-        WHERE year = ?
-          AND month = ?
-          AND previous_stop = ? AND stop = ?
+        WHERE year = $year
+          AND month = $month
+          AND previous_stop = $previous AND stop = $stop
         ORDER BY hour
         """,
-            params=(year, month, previous, now),
+            params=dict(year=year, month=month, previous=previous, stop=now, choice=stat),
         ).df()
 
     quantiles = px.line(
@@ -561,7 +558,7 @@ def render_stat_distribution_for_leg(year_month, stat, chosen_leg):
         x="hour",
         y="seconds",
         color="variable",
-        title=f"{stat.capitalize()} between {previous} and {now} in {year}-{month}",
+        title=f"{stat_labels[stat]} between {previous} and {now} in {year}-{month}",
     )
     counts = px.line(
         df[["hour", "count"]].melt(id_vars="hour", value_name="Count"),
@@ -602,42 +599,38 @@ def update_map_page(
     selected_label = year_month_values[year_month_slider_idx]
     year, month = map(int, selected_label.split("-"))
 
-    if stat not in stat_labels:
-        raise ValueError(f"{stat} is not a permitted column")
-
     if chosen_line not in unique_lines:
         return px.scatter(title="You must choose a line to see a map here.")
 
-    column = f"{stat_labels[stat]}_stats"
-
-    query = f"""
+    query = """
         SELECT
             previous_stop || ' to ' || stop as leg, 
             map_lat as latitude, 
             map_lon as longitude, 
             count,
-            {column}['mean'] as mean,
-            {column}['min'] as min,
-            ({column}['percentiles'])[1] as "10% percentile",
-            ({column}['percentiles'])[2] as "25% percentile",
-            ({column}['percentiles'])[3] as "50% percentile",
-            ({column}['percentiles'])[4] as "75% percentile",
-            ({column}['percentiles'])[5] as "90% percentile",
-            {column}['max'] as max,
+            (struct_extract(stats, $choice))['mean'] as mean,
+            (struct_extract(stats, $choice))['min'] as min,
+            ((struct_extract(stats, $choice)).percentiles)[1] as "10% percentile",
+            ((struct_extract(stats, $choice)).percentiles)[2] as "25% percentile",
+            ((struct_extract(stats, $choice)).percentiles)[3] as "50% percentile",
+            ((struct_extract(stats, $choice)).percentiles)[4] as "75% percentile",
+            ((struct_extract(stats, $choice)).percentiles)[5] as "90% percentile",
+            (struct_extract(stats, $choice)).max as max,            
             least(3, round(
-                (actual_duration_stats['percentiles'])[4] / median(
-                   (actual_duration_stats['percentiles'])[2]) over (
+                (stats.actual_duration.percentiles)[4] / median(
+                   (stats.actual_duration.percentiles)[2]) over (
                    partition by previous_stop, stop, year, month
             ), 2)) as rush_sensitivity
         FROM leg_stats JOIN stop_line using (previous_stop, stop, year, month, hour)
-        WHERE year = ?
-          AND month = ?
-          AND hour = ?
-          AND lineRef = ?
+        WHERE year = $year
+          AND month = $month
+          AND hour = $hour
+          AND lineRef = $line
     """
     with db.cursor() as curs:
         df = (
-            curs.execute(query, (year, month, hour_value, chosen_line))
+            curs.execute(query,
+                         dict(year=year, month=month, hour=hour_value, line=chosen_line, choice=stat))
             .fetchdf()
             .assign(clamp_mean=lambda df: df["mean"].clip(lower=1))
         )
@@ -665,12 +658,12 @@ def update_map_page(
         color_continuous_scale="viridis_r",
         zoom=11,
         center=dict(lat=lat, lon=lon),
-        title=f"Average {stat.lower()} in seconds for {chosen_line} {year}-{month:02d} between {hour_value}:00-{hour_value}:59",
+        title=f"Average {stat_labels[stat].lower()} in seconds for {chosen_line} {year}-{month:02d} between {hour_value}:00-{hour_value}:59",
         height=800,
     )
     fig.update_layout()
     fig.add_annotation(
-        text=f"Size represents average {stat.lower()} between {hour_value}:00-{hour_value}:59 for all days in the month",
+        text=f"Size represents average {stat_labels[stat].lower()} between {hour_value}:00-{hour_value}:59 for all days in the month",
         xref="paper",
         yref="paper",
         x=0.5,
@@ -704,6 +697,7 @@ app.layout = html.Div(
             ],
         ),
         state,
+        bottom
     ]
 )
 
@@ -727,38 +721,33 @@ def update_map_page(
     selected_label = year_month_values[year_month_slider_idx]
     year, month = map(int, selected_label.split("-"))
 
-    if stat not in stat_labels:
-        raise ValueError(f"{stat} is not a permitted column")
-
-    column = f"{stat_labels[stat]}_stats"
-
-    query = f"""
+    query = """
         SELECT
             previous_stop || ' to ' || stop as leg, 
             map_lat as latitude, 
             map_lon as longitude, 
             count,
-            {column}['mean'] as mean,
-            {column}['min'] as min,
-            ({column}['percentiles'])[1] as "10% percentile",
-            ({column}['percentiles'])[2] as "25% percentile",
-            ({column}['percentiles'])[3] as "50% percentile",
-            ({column}['percentiles'])[4] as "75% percentile",
-            ({column}['percentiles'])[5] as "90% percentile",
-            {column}['max'] as max,
+            (struct_extract(stats, $choice))['mean'] as mean,
+            (struct_extract(stats, $choice))['min'] as min,
+            ((struct_extract(stats, $choice)).percentiles)[1] as "10% percentile",
+            ((struct_extract(stats, $choice)).percentiles)[2] as "25% percentile",
+            ((struct_extract(stats, $choice)).percentiles)[3] as "50% percentile",
+            ((struct_extract(stats, $choice)).percentiles)[4] as "75% percentile",
+            ((struct_extract(stats, $choice)).percentiles)[5] as "90% percentile",
+            (struct_extract(stats, $choice)).max as max,
             least(3, round(
-                (actual_duration_stats['percentiles'])[4] / median(
-                   (actual_duration_stats['percentiles'])[2]) over (
+                (stats.actual_duration.percentiles)[4] / median(
+                   (stats.actual_duration.percentiles)[2]) over (
                    partition by previous_stop, stop, year, month
             ), 2)) as rush_sensitivity
         FROM leg_stats
-        WHERE year = ?
-          AND month = ?
-          AND hour = ?
+        WHERE year = $year
+          AND month = $month
+          AND hour = $hour
     """
     with db.cursor() as curs:
         df = (
-            curs.execute(query, (year, month, hour_value))
+            curs.execute(query, dict(year=year, month=month, hour=hour_value, choice=stat))
             .fetchdf()
             .assign(clamp_mean=lambda df: df["mean"].clip(lower=1))
         )
@@ -767,6 +756,8 @@ def update_map_page(
         map_state["center"] = relayout_data["map.center"]
     if relayout_data and "map.zoom" in relayout_data:
         map_state["zoom"] = relayout_data["map.zoom"]
+    if relayout_data and "map.tilt" in relayout_data:
+        map_state["tilt"] = relayout_data["map.tilt"]
 
     fig = px.scatter_map(
         df,
@@ -789,11 +780,11 @@ def update_map_page(
         color_continuous_scale="viridis_r",
         zoom=map_state["zoom"],
         center=(map_state["center"]),
-        title=f"Average {stat.lower()} in seconds for {year}-{month:02d} between {hour_value}:00-{hour_value}:59",
+        title=f"Average {stat_labels[stat].lower()} in seconds for {year}-{month:02d} between {hour_value}:00-{hour_value}:59",
         height=800,
     )
     fig.add_annotation(
-        text=f"Size represents average {stat.lower()} between {hour_value}:00-{hour_value}:59 for all days in the month",
+        text=f"Size represents average {stat_labels[stat].lower()} between {hour_value}:00-{hour_value}:59 for all days in the month",
         xref="paper",
         yref="paper",
         x=0.5,
