@@ -578,6 +578,13 @@ line_tab = dcc.Tab(
         html.H2("Investigate traffic by one transit line"),
         html.Label("Line to investigate"),
         line_picker,
+        html.Ul(children=[
+            html.Li("Here are some examples:"),
+            html.Li("Metro bus line 1 in Trondheim is ATB:Line:2_1"),
+            html.Li("Metro bus line 2 in Trondheim is ATB:Line:2_2"),
+            html.Li("Bus line 10 in Trondheim is ATB:Line:2_10"),
+            html.Li("Bus line 310 in Trondheim is ATB:Line:2_310"),
+        ]),
         dcc.Graph("line-map"),
     ],
 )
