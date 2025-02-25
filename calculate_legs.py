@@ -51,8 +51,8 @@ create or replace table legs as select
   now.datedServiceJourneyId as datedServiceJourneyId,
   now.arrivalTime as time,
   now.aimedArrivalTime as planned_time,
-  extract(epoch from now.aimedArrivalTime - previous.aimedArrivalTime) as planned_duration,
-  extract(epoch from now.arrivalTime - previous.arrivalTime) as actual_duration,
+  extract(epoch from now.aimedArrivalTime - coalesce(previous.aimedArrivalTime, previous.aimedDepartureTime)) as planned_duration,
+  extract(epoch from now.arrivalTime - coalesce(previous.arrivalTime, previous.aimedArrivalTime)) as actual_duration,
   actual_duration - planned_duration as deviation,
   extract(epoch from time - planned_time) as delay
 from arrivals previous join arrivals now on

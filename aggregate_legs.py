@@ -113,7 +113,7 @@ select
   extract(year from time) as year,
   extract(month from time) as month,
   extract(hour from time) as hour
-from legs  
+from legs
 group by all
 """)
 
