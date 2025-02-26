@@ -3,12 +3,14 @@
 Start the plotly dash webapp in development mode.
 """
 
-# NB! This file isn't pretty, it's hackathon quality at most. At the very least it should
-# be split into one file per tab in the dashboard. I timeboxed this into two very hectic
-# weekend days to test as many ideas as possible.
+# NB! This file isn't pretty, it's hackathon quality at most. At the very least it should.
+# be split into one file per tab in the dashboard, and a separate module for the SQL queries.
+# I timeboxed this into two very hectic weekend days to test as many ideas as possible and
+# haven't cleaned up after myself yet.
 
 import os
 
+import pandas as pd
 from dash import dcc, html, Input, Output, Dash, State
 from dash.exceptions import PreventUpdate
 from flask import Flask
@@ -16,8 +18,8 @@ import plotly.express as px
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 import duckdb
-server = Flask(__name__)
 
+server = Flask(__name__)
 
 def initialize_duckb():
     """Set up an inmemory duckdb and read the parquet files into tables"""
@@ -102,17 +104,106 @@ with db.cursor() as cursor:
         "SELECT COUNT(DISTINCT (previous_stop, stop)) FROM leg_stats"
     ).fetchall()[0][0]
 
-external_scripts = [
-    {'src': 'https://scripts.simpleanalyticscdn.com/latest.js', 'async': ''}
-] if 'SIMPLE_ANALYTICS' in os.environ else []
+external_scripts = (
+    [{"src": "https://scripts.simpleanalyticscdn.com/latest.js", "async": ""}]
+    if "SIMPLE_ANALYTICS" in os.environ
+    else []
+)
 
-app = Dash(name="bus-eta", title="Public transit study", server=server, external_scripts=external_scripts)
+app = Dash(
+    name="bus-eta",
+    title="Public transit study",
+    server=server,
+    external_scripts=external_scripts,
+)
 
 year_month_values = [
     f"{row.year:04d}-{row.month:02d}" for _, row in df_year_month.iterrows()
 ]
 
-# Stored on the client so we don't lose track of what the browser is looking at between swapping visualizations
+# These next three blocks are tightly coupled to both the map views
+# Who knew the hard part would be to make a nice tooltip?
+
+def map_hovertemplate(stat: str, year: int, month: int, hour: int) -> str:
+    custom_text = "<br>".join(
+        [
+            f"{name if name != 'mean' else 'average'}: %{{customdata[{i}]}}"
+            for i, name in enumerate(map_tooltip_data)
+            # very dirty hack that relies on dict insertion order
+            if map_tooltip_data[name] and i > 3
+        ]
+    )
+
+    title = f"<b>%{{hovertext}}</b><br><br>"
+    info = f"%{{customdata[0]}} observations between {hour}:00 and {hour}:59 in {year}-{month}<br>"
+    extras = (
+        f"Rush intensity %{{customdata[1]}} between {hour}:00 and {hour}:59 in {year}-{month}<br>"
+        f"Air distance: %{{customdata[3]}}km<br>"
+    )
+
+
+    if stat == "delay":
+        help = f"<br>Accumulated delay at end of leg statistics (in seconds)<br>"
+    else:
+        label = stat_labels[stat]
+        help = f"<br>{label} between stops statistics (in seconds)<br>"
+    avg = f"average: %{{customdata[2]}}<br>"
+    return f"""{title}{info}{extras}{help}{avg}{custom_text}"""
+
+map_tooltip_data: dict[str, bool] = {
+    # Don't reorder first 3, the insertion order is significant
+    # because of the dirty hovertemplate hack in map_hovertemplate
+    "count": True,
+    "rush_intensity": True,
+    "mean": True,
+    "air_distance_km": True,
+    "clamp_mean": False,
+    "10% percentile": True,
+    "25% percentile": True,
+    "50% percentile": True,
+    "75% percentile": True,
+    "90% percentile": True,
+}
+
+
+def map_query(year, month, hour, stat, chosen_line=None) -> pd.DataFrame:
+    with db.cursor() as cursor:
+        return cursor.sql(
+            """
+        SELECT
+            previous_stop || ' to ' || stop as leg,
+            map_lat as latitude, 
+            map_lon as longitude, 
+            count,
+            air_distance_km,
+            (struct_extract(stats, $choice))['mean'] as mean,
+            greatest(1, (struct_extract(stats, $choice))['mean']) as clamp_mean,
+            (struct_extract(stats, $choice))['min'] as min,
+            ((struct_extract(stats, $choice)).percentiles)[1] as "10% percentile",
+            ((struct_extract(stats, $choice)).percentiles)[2] as "25% percentile",
+            ((struct_extract(stats, $choice)).percentiles)[3] as "50% percentile",
+            ((struct_extract(stats, $choice)).percentiles)[4] as "75% percentile",
+            ((struct_extract(stats, $choice)).percentiles)[5] as "90% percentile",
+            (struct_extract(stats, $choice)).max as max,            
+            least(3, round(
+                (stats.actual_duration.percentiles)[4] / median(
+                   (stats.actual_duration.percentiles)[2]) over (
+                   partition by previous_stop, stop, year, month
+            ), 2)) as rush_intensity
+        FROM leg_stats JOIN stop_line using (previous_stop, stop, year, month, hour)
+        WHERE year = $year
+          AND month = $month
+          AND hour = $hour
+          AND ($line is NULL OR lineRef = $line)
+        """,
+            params=dict(
+                year=year, month=month, hour=hour, choice=stat, line=chosen_line
+            ),
+        ).df()
+
+
+# Stored on the client so we don't lose track of what the browser is looking,
+# otherwise, zooming/panning is lost when changing year-month or hour-of-day
 state = dcc.Store(
     id="state",
     data=dict(
@@ -122,7 +213,7 @@ state = dcc.Store(
     ),
 )
 
-# Inputs
+# Inputs on top of the dashboard (shared between all visualizations)
 date_slider = dcc.Slider(
     id="map-year-month-slider",
     min=0,
@@ -130,7 +221,7 @@ date_slider = dcc.Slider(
     step=1,
     marks={i: label for i, label in enumerate(year_month_values)},
     value=len(year_month_values) - 1,
-    included=False
+    included=False,
 )
 hour_marks = {i: str(i) for i in range(24)}
 
@@ -149,7 +240,6 @@ stat_picker = dcc.RadioItems(
 global_inputs = [
     html.Label("Select year and month", htmlFor=date_slider.id),
     date_slider,
-    # Hour slider
     html.Label("Select hour of day", htmlFor=hour_slider.id),
     hour_slider,
     html.Br(),
@@ -158,10 +248,18 @@ global_inputs = [
     html.Br(),
 ]
 
+# Inputs local to a tab
+
 stop_picker = dcc.Dropdown(id="stop-picker", placeholder="Start typing to search")
 leg_picker = dcc.Dropdown(id="leg-picker", placeholder="Start typing to search")
-line_picker = dcc.Dropdown(id="line-picker", placeholder="Start typing to search")
+line_picker = dcc.Dropdown(
+    id="line-picker",
+    placeholder="Start typing to search",
+    options=unique_lines,
+    value="ATB:Line:2_1",
+)
 
+# Completion for text inputs
 
 @app.callback(Output(stop_picker.id, "options"), Input(stop_picker.id, "search_value"))
 def complete_stop_options(search_value):
@@ -198,65 +296,77 @@ def complete_line_options(search_value):
 
 
 explanation = dcc.Tab(
-    value='explanation',
-    label='Explanation of terms',
+    value="explanation",
+    label="Help",
     children=[
-    html.H2(children=["Explanation of terms used on this page"]),
-    html.Ul(
-        children=[
-            html.Li(
-                "A Leg is a travel from one stop to the next stop in the schedule. The start of a leg is the arrival time at "
-                "the first stop. The end of a leg is the arrival time at the next stop. The markers in the maps "
-                "in this dashboard show data about all public transportation that have travelled that leg (all lines). "
-                "The markers are placed near the start of the leg."
-            ),
-            html.Li(
-                "Deviation is how much longer it actually took to get from one stop to the next compared to the scheduled time."
-            ),
-            html.Li(
-                "Delay is the total number of seconds by which the vehicle is running late when it arrives at the next stop "
-                "(i.e., how far behind schedule it is overall at that point). It is equal to the accumulated deviation up to that stop."
-            ),
-            html.Li(
-                "Actual duration is the real time it takes (in seconds) for the vehicle to travel from one stop to another."
-            ),
-            html.Li(
-                "Rush sensitivity is a measure that shows how travel time increases during busy hours. It’s calculated by taking the actual "
-                "travel time during rush hour and dividing it by the usual (non-rush) travel time. "
-                "Intuitively, a rush sensitivity of 2 means that travel between two stops takes twice as much time during rush "
-                "traffic."
-            ),
-        ]
-    ),
-    html.P(
-        children=[
-            "All time units for these are in seconds, and are aggregate numbers for all transits "
-            "observed at or between stops during the selected year and month, in the chosen hour of day."
-        ]
-    ),
-])
+        html.H2(children=["Help"]),
+        html.P(
+            "This page exposes a lot of dense information that is difficult to communicate clearly in brief statements. "
+            "Here's an attempt at clarifying the most important terms used in the visualizations."
+        ),
+        html.Ul(
+            children=[
+                html.Li(
+                    "A Leg is a travel from one stop to the next stop in the schedule. The start of a leg is the arrival time at "
+                    "the first stop. The end of a leg is the arrival time at the next stop. The markers in the maps "
+                    "in this dashboard show data about all public transportation that have travelled that leg (all lines). "
+                    "The markers are placed near the start of the leg."
+                ),
+                html.Li(
+                    "Deviation is how much longer it actually took to get from one stop to the next compared to the scheduled time."
+                ),
+                html.Li(
+                    "Delay is the total number of seconds by which the vehicle is running late when it arrives at the next stop "
+                    "(i.e., how far behind schedule it is overall at that point). It is equal to the accumulated deviation up to that stop."
+                ),
+                html.Li(
+                    "Actual duration is the real time it takes (in seconds) for the vehicle to travel from one stop to another."
+                ),
+                html.Li(
+                    "Rush intensity is a measure that shows how travel time increases during busy hours. It’s calculated by taking the actual "
+                    "travel time during rush hour and dividing it by the usual (non-rush) travel time. "
+                    "Intuitively, a rush intensity of 2 means that travel between two stops takes twice as much time during rush "
+                    "traffic."
+                ),
+            ]
+        ),
+        html.P(
+            children=[
+                "All time units for these are in seconds, and are aggregate numbers for all transits "
+                "observed at or between stops during the selected year and month, in the chosen hour of day. "
+                f"In total there are some {about['transits_seen']} legs used to create these visualizations. "
+                "Suggestions or bugs are welcome at ", html.A(
+                    href="https://github.com/kaaveland/bus-eta/issues", children="the issue tracker."
+                )
+            ]
+        ),
+    ],
+)
 
-top = [
-    html.H1("Public transit study")
-]
+top = [html.H1("Public transit study")]
 
-bottom = html.Div(children=[
-    html.P(
-        children=[
-            "All data is from ",
-            html.A(href="https://data.entur.no", children="Entur"),
-            " open data sets. Source code and exploratory analysis available at ",
-            html.A(
-                href="https://github.com/kaaveland/bus-eta",
-                children="github",
-            ),
-            " under the MIT license.",
-            " There's a blog post at the ",
-            html.A(href="https://arktekk.no/blogs/2025_entur_realtimedataset", children="Arktekk blog"),
-            " describing the making of this dashboard.",
-        ]
-    ),
-])
+bottom = html.Div(
+    children=[
+        html.P(
+            children=[
+                "All data is from ",
+                html.A(href="https://data.entur.no", children="Entur"),
+                " open data sets. Source code and exploratory analysis available at ",
+                html.A(
+                    href="https://github.com/kaaveland/bus-eta",
+                    children="github",
+                ),
+                " under the MIT license.",
+                " There's a blog post at the ",
+                html.A(
+                    href="https://arktekk.no/blogs/2025_entur_realtimedataset",
+                    children="Arktekk blog",
+                ),
+                " describing the making of this dashboard.",
+            ]
+        ),
+    ]
+)
 
 about = dcc.Tab(
     label="About the data set",
@@ -401,7 +511,7 @@ def render_traffic_sources(
                     y=subset["count"],
                     name=f"{previous}",
                     mode="lines+markers",
-                    hovertemplate="%{x}:00-%{x}:59 total %{y}",
+                    hovertemplate=f"%{{x}}:00-%{{x}}:59 total %{{y}}",
                 ),
                 row=1,
                 col=1,
@@ -556,7 +666,9 @@ def render_stat_distribution_for_leg(year_month, stat, chosen_leg):
           AND previous_stop = $previous AND stop = $stop
         ORDER BY hour
         """,
-            params=dict(year=year, month=month, previous=previous, stop=now, choice=stat),
+            params=dict(
+                year=year, month=month, previous=previous, stop=now, choice=stat
+            ),
         ).df()
 
     quantiles = px.line(
@@ -581,16 +693,17 @@ line_tab = dcc.Tab(
     id="line-tab",
     label="Line Map",
     children=[
-        html.H2("Investigate traffic by one transit line"),
+        html.H2("Investigate legs used by one transit line"),
+        html.P("Data includes other lines using the same stops."),
         html.Label("Line to investigate"),
         line_picker,
-        html.Ul(children=[
-            html.Li("Here are some examples:"),
-            html.Li("Metro bus line 1 in Trondheim is ATB:Line:2_1"),
-            html.Li("Metro bus line 2 in Trondheim is ATB:Line:2_2"),
-            html.Li("Bus line 10 in Trondheim is ATB:Line:2_10"),
-            html.Li("Bus line 310 in Trondheim is ATB:Line:2_310"),
-        ]),
+        html.Ul(
+            children=[
+                html.Li("Here are some examples:"),
+                html.Li("Metro bus line 1 in Trondheim is ATB:Line:2_1"),
+                html.Li("Bus line 310 in Trondheim is ATB:Line:2_310"),
+            ]
+        ),
         dcc.Graph("line-map"),
     ],
 )
@@ -615,38 +728,7 @@ def update_map_page(
     if chosen_line not in unique_lines:
         return px.scatter(title="You must choose a line to see a map here.")
 
-    query = """
-        SELECT
-            previous_stop || ' to ' || stop as leg, 
-            map_lat as latitude, 
-            map_lon as longitude, 
-            count,
-            (struct_extract(stats, $choice))['mean'] as mean,
-            greatest(1, (struct_extract(stats, $choice))['mean']) as clamp_mean,
-            (struct_extract(stats, $choice))['min'] as min,
-            ((struct_extract(stats, $choice)).percentiles)[1] as "10% percentile",
-            ((struct_extract(stats, $choice)).percentiles)[2] as "25% percentile",
-            ((struct_extract(stats, $choice)).percentiles)[3] as "50% percentile",
-            ((struct_extract(stats, $choice)).percentiles)[4] as "75% percentile",
-            ((struct_extract(stats, $choice)).percentiles)[5] as "90% percentile",
-            (struct_extract(stats, $choice)).max as max,            
-            least(3, round(
-                (stats.actual_duration.percentiles)[4] / median(
-                   (stats.actual_duration.percentiles)[2]) over (
-                   partition by previous_stop, stop, year, month
-            ), 2)) as rush_sensitivity
-        FROM leg_stats JOIN stop_line using (previous_stop, stop, year, month, hour)
-        WHERE year = $year
-          AND month = $month
-          AND hour = $hour
-          AND lineRef = $line
-    """
-    with db.cursor() as curs:
-        df = (
-            curs.execute(query,
-                         dict(year=year, month=month, hour=hour_value, line=chosen_line, choice=stat))
-            .fetchdf()
-        )
+    df = map_query(year, month, hour_value, stat, chosen_line)
 
     lat, lon = df.latitude.median(), df.longitude.median()
 
@@ -656,25 +738,16 @@ def update_map_page(
         lat="latitude",
         lon="longitude",
         size="clamp_mean",
-        hover_data={
-            "clamp_mean": False,
-            "mean": True,
-            "count": True,
-            "rush_sensitivity": True,
-            "10% percentile": True,
-            "25% percentile": True,
-            "50% percentile": True,
-            "75% percentile": True,
-            "90% percentile": True,
-        },
-        color="rush_sensitivity",
+        hover_data=map_tooltip_data,
+        color="rush_intensity",
         color_continuous_scale="viridis_r",
-        zoom=11,
+        zoom=10,
         center=dict(lat=lat, lon=lon),
         title=f"Average {stat_labels[stat].lower()} in seconds for {chosen_line} {year}-{month:02d} between {hour_value}:00-{hour_value}:59",
         height=800,
     )
-    fig.update_layout()
+    fig.update_traces(hovertemplate=map_hovertemplate(stat, year, month, hour_value))
+
     fig.add_annotation(
         text=f"Size represents average {stat_labels[stat].lower()} between {hour_value}:00-{hour_value}:59 for all days in the month",
         xref="paper",
@@ -687,6 +760,7 @@ def update_map_page(
 
     return fig
 
+
 # Root level / tabs
 app.layout = html.Div(
     [
@@ -698,20 +772,20 @@ app.layout = html.Div(
             children=[
                 explanation,
                 dcc.Tab(
-                    label="Map",
+                    label="Leg Map",
                     value="map-tab",
                     children=[
                         dcc.Graph(id="map-figure"),
                     ],
                 ),
+                line_tab,
                 stop_tab,
                 leg_tab,
-                line_tab,
                 about,
             ],
         ),
         state,
-        bottom
+        bottom,
     ]
 )
 
@@ -734,44 +808,14 @@ def update_map_page(
 ):
     selected_label = year_month_values[year_month_slider_idx]
     year, month = map(int, selected_label.split("-"))
+    df = map_query(year, month, hour_value, stat)
 
-    query = """
-        SELECT
-            previous_stop || ' to ' || stop as leg, 
-            map_lat as latitude, 
-            map_lon as longitude, 
-            count,
-            (struct_extract(stats, $choice))['mean'] as mean,
-            greatest(1, (struct_extract(stats, $choice))['mean']) as clamp_mean,
-            (struct_extract(stats, $choice))['min'] as min,
-            ((struct_extract(stats, $choice)).percentiles)[1] as "10% percentile",
-            ((struct_extract(stats, $choice)).percentiles)[2] as "25% percentile",
-            ((struct_extract(stats, $choice)).percentiles)[3] as "50% percentile",
-            ((struct_extract(stats, $choice)).percentiles)[4] as "75% percentile",
-            ((struct_extract(stats, $choice)).percentiles)[5] as "90% percentile",
-            (struct_extract(stats, $choice)).max as max,
-            least(3, round(
-                (stats.actual_duration.percentiles)[4] / median(
-                   (stats.actual_duration.percentiles)[2]) over (
-                   partition by previous_stop, stop, year, month
-            ), 2)) as rush_sensitivity
-        FROM leg_stats
-        WHERE year = $year
-          AND month = $month
-          AND hour = $hour
-    """
-    with db.cursor() as curs:
-        df = (
-            curs.execute(query, dict(year=year, month=month, hour=hour_value, choice=stat))
-            .fetchdf()
-        )
-
+    # This stores the zoom and center of the map on the client so that we can recover it
+    # if they change the year-month, stat or hour
     if relayout_data and "map.center" in relayout_data:
         map_state["center"] = relayout_data["map.center"]
     if relayout_data and "map.zoom" in relayout_data:
         map_state["zoom"] = relayout_data["map.zoom"]
-    if relayout_data and "map.tilt" in relayout_data:
-        map_state["tilt"] = relayout_data["map.tilt"]
 
     fig = px.scatter_map(
         df,
@@ -779,24 +823,15 @@ def update_map_page(
         lat="latitude",
         lon="longitude",
         size="clamp_mean",
-        hover_data={
-            "clamp_mean": False,
-            "mean": True,
-            "count": True,
-            "rush_sensitivity": True,
-            "10% percentile": True,
-            "25% percentile": True,
-            "50% percentile": True,
-            "75% percentile": True,
-            "90% percentile": True,
-        },
-        color="rush_sensitivity",
+        hover_data=map_tooltip_data,
+        color="rush_intensity",
         color_continuous_scale="viridis_r",
         zoom=map_state["zoom"],
         center=(map_state["center"]),
         title=f"Average {stat_labels[stat].lower()} in seconds for {year}-{month:02d} between {hour_value}:00-{hour_value}:59",
         height=800,
     )
+    fig.update_traces(hovertemplate=map_hovertemplate(stat, year, month, hour_value))
     fig.add_annotation(
         text=f"Size represents average {stat_labels[stat].lower()} between {hour_value}:00-{hour_value}:59 for all days in the month",
         xref="paper",
