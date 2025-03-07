@@ -10,7 +10,7 @@ I clickopsed an object storage bucket. Not much to say about this, it needs a na
 stored and TB egress. The minimum price of ~6 euro covers 1TB-month and 1TB egress, which should be plenty.
 
 I used the minio client `mc` to upload files. I needed to first write a `~/.mc/config.json`. The documentation
-in the Hetzner portal got me started. 
+in the Hetzner portal got me started.
 
 I can set cors config like this:
 ```shell
@@ -36,7 +36,7 @@ the whitelist.
 
 I selected ubuntu 24.04.2. I went with a shared CPU machine. It looks easy to change to a
 dedicated one if I change my mind. This machine is about 7 euro a month for 4VCPus and 8GB RAM.
-I plan to move some things from an american cloud vendor to this server too. If the server 
+I plan to move some things from an american cloud vendor to this server too. If the server
 doesn't have terrible noisy neighbour-problems, it is a very reasonable price. I should be
 able to move all the things I run elsewhere to this machine, which already pays most of the
 bill.
@@ -44,7 +44,7 @@ bill.
 The first thing I did was to upgrade all packages:
 
 ```shell
-apt update && apt upgrade -y 
+apt update && apt upgrade -y
 ```
 
 I needed to reboot it to get a new kernel:
@@ -53,7 +53,7 @@ reboot 0
 ```
 
 Really, I should be doing absolutely everything from this point on using ansible or puppet,
-but I'll deal with that later. Instead, I'm making this meticulous log of the session so 
+but I'll deal with that later. Instead, I'm making this meticulous log of the session so
 that I _can_ easily port it when I find the time.
 
 ### Unattended upgrades
@@ -67,9 +67,9 @@ unattended-upgrades/noble,now 2.9.1+nmu4ubuntu1 all [installed]
   automatic installation of security upgrades
 ```
 
-But I need the machine to restart now and then. 
+But I need the machine to restart now and then.
 
-I can configure things in `/etc/apt/apt.conf.d/50unattended-upgrades`. I found and 
+I can configure things in `/etc/apt/apt.conf.d/50unattended-upgrades`. I found and
 uncommented these lines:
 
 ```
@@ -90,8 +90,8 @@ Unattended-Upgrade::Automatic-Reboot-Time "02:00";
 Unattended-Upgrade::SyslogEnable "false";
 ```
 
-I set automatic reboot and syslog to true and saved it. This seems like it should 
-do what I want. 
+I set automatic reboot and syslog to true and saved it. This seems like it should
+do what I want.
 
 This command tells me that the unattended-upgrades package is enabled:
 
@@ -105,7 +105,7 @@ automatically, which probably just means it needs to be enabled in `systemctl`.
 ### nginx and certbot
 
 I was considering to use something like [caddy](https://caddyserver.com/), but I'm already
-familiar with `nginx` and `certbot`, so it's where I'll start. I am not exposing any 
+familiar with `nginx` and `certbot`, so it's where I'll start. I am not exposing any
 services to the internet without making them go through a reverse proxy. I am going
 to choose to trust the versions that are in `apt`:
 
@@ -143,7 +143,7 @@ rm /etc/nginx/sites-enabled/default
 ```
 
 I check out `/etc/nginx/sites-available/kollektivkart.conf` and notice that
-certbot has taken care of automatic promotion to TLS and setting up some cipher suits and a 
+certbot has taken care of automatic promotion to TLS and setting up some cipher suits and a
 server block. Nice. I run the [ssltest](https://www.ssllabs.com/ssltest/)  and it gets an A.
 
 I run `grep -R certbot /etc/cron*` and I see a job for automatic renewal. Nice.
@@ -196,7 +196,7 @@ This list of installs:
  apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
  ```
 
-Appears to have given me everything I need. I don't want to run docker as `root`, so I 
+Appears to have given me everything I need. I don't want to run docker as `root`, so I
 follow the [post installation steps](https://docs.docker.com/engine/install/linux-postinstall/).
 
 I create a user to run the webapp:
@@ -253,7 +253,7 @@ I don't want this page to be scanned by bots since almost all the content is dyn
 
 At this point, I have [kollektivkart.arktekk.no](https://kollektivkart.arktekk.no/) working!
 
-### Systemd setup
+### Systemd setup **OUTDATED** see below
 
 I made a systemd unit file:
 
@@ -292,3 +292,71 @@ systemctl start kollektivkart
 ```
 
 Next, I just test that, by rebooting.
+
+### Revised systemd setup
+
+I got a tip that I can use podman to run rootless containers and revised the systemd setup.
+
+I installed podmad with `apt install -y podman`.
+
+Instead of putting things in /etc/systemd/system, I made two files in the home folder for the kollektivkart user:
+
+In `$HOME/kollektivkart.conf` I made an environment file:
+
+```shell
+CPU_LIMIT=2.0
+MEM_LIMIT=2048m
+WORKERS=4
+SIMPLE_ANALYTICS=true
+IMAGE_TAG=latest
+```
+
+In `$HOME/.config/systemd/user/kollektivkart.service` I made a user specific systemd unit:
+
+``` shell
+[Unit]
+Description=kollektivkart
+After=network.target
+
+[Service]
+EnvironmentFile=/home/kollektivkart/kollektivkart.conf
+ExecStart=/usr/bin/podman run --rm -p 127.0.0.1:8000:8000 \
+      --cpus="${CPU_LIMIT}" \
+      --memory="${MEM_LIMIT}" \
+      --env-file=/home/kollektivkart/kollektivkart.conf \
+      ghcr.io/kaaveland/bus-eta:${IMAGE_TAG} \
+      webapp:server \
+      --preload \
+      --bind 0.0.0.0:8000 \
+      --chdir=/app \
+      --workers="${WORKERS}"
+
+
+SyslogIdentifier=kollektivkart
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
+```
+
+I needed to run one command as root in order for this unit to be loaded automatically on reboots:
+
+``` shell
+loginctl enable-linger kollektivkart
+```
+
+On the user, I needed to run:
+
+``` shell
+systemctl --user daemon-reload
+systemctl --user enable kollektivkart
+systemctl --user start kollektivkart
+```
+
+I should be able to deploy by just pulling a new image and restarting, it should be easy to automate too.
+
+After I had verified it was working, I got rid of the docker setup:
+
+``` shell
+apt remove docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
