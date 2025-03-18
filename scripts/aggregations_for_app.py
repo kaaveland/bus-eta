@@ -81,13 +81,17 @@ COPY (
 """)
 
 available_partitions = {
-    row[0] for row in
-    db.query(f"select distinct month from read_parquet('{legs}/*/*', hive_partitioning=true)").fetchall()
+    row[0]
+    for row in db.query(
+        f"select distinct month from read_parquet('{legs}/*/*', hive_partitioning=true)"
+    ).fetchall()
 }
 try:
     completed_partitions = {
-        row[0] for row in
-        db.query(f"select distinct month from read_parquet('{opts.data}/leg_stats.parquet/*/*')").fetchall()
+        row[0]
+        for row in db.query(
+            f"select distinct month from read_parquet('{opts.data}/leg_stats.parquet/*/*')"
+        ).fetchall()
     }
 except duckdb.IOException as _not_exists:
     completed_partitions = set()

@@ -96,7 +96,7 @@ except duckdb.IOException as _not_exists:
     completed_partitions = set()
 
 required_partitions = (available_partitions - completed_partitions) | {
-    max(available_partitions) # include the latest partition always
+    max(available_partitions)  # include the latest partition always
 }
 
 legs_view = f"""
