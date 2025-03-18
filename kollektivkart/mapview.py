@@ -33,6 +33,6 @@ def add_map_view(app: Dash):
             zoom=9,
             height=800,
             color='rush_intensity',
-            color_continuous_scale="Cividis",
+            color_continuous_scale="Cividis_r",
             range_color=[1.0, 2.0]
         )
