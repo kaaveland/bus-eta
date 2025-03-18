@@ -28,9 +28,11 @@ def add_map_view(app: Dash):
             lon='lon',
             size='hourly_count',
             hover_name='name',
+            hover_data=['monthly_count', 'hourly_duration', 'monthly_duration'],
             center=center,
             zoom=9,
             height=800,
             color='rush_intensity',
-            color_continuous_scale="viridis_r",
+            color_continuous_scale="Cividis",
+            range_color=[1.0, 2.0]
         )

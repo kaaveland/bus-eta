@@ -7,7 +7,12 @@ def datasources_by_name(db: DuckDBPyConnection) -> dict[str, str]:
     return {
         row[1]: row[0]
         for row
-        in db.query("select dataSourceName, dataSource from datasources order by dataSourceName").fetchall()
+        # TODO: Fix SOF differently
+        in db.query("""
+        select dataSourceName, dataSource 
+        from datasources 
+        where dataSource != 'SOF' 
+        order by dataSourceName""").fetchall()
     }
 
 

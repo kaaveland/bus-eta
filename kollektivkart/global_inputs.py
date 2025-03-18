@@ -9,6 +9,7 @@ def render_global_inputs(db: DuckDBPyConnection) -> html.Div:
         value="RUT",
         options=queries.datasources_by_name(db)
     )
+    print(queries.datasources_by_name(db))
     months = queries.months(db)
     month_slider = dcc.Slider(
         id="month",
