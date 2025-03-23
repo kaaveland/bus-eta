@@ -36,16 +36,23 @@ app = dash.Dash(
     server=server,
     external_scripts=external_scripts
 )
+state = dcc.Store(
+        id="state", data=dict(
+            zoom=8,
+            center=dict(lat=59.91, lon=10.79)
+        )
+    )
 
 app.layout = html.Div([
     html.H1("Public transit study"),
     global_inputs.render_global_inputs(db),
+    state,
     html.Div(
         dcc.Graph(id="main-map")
     )
 ])
 
-mapview.add_map_view(app)
+mapview.add_map_view(app, state)
 
 
 __all__ = [
