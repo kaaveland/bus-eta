@@ -114,9 +114,11 @@ mapview.main_map_view(app, state)
 mapview.hot_spots(app, state)
 
 
-@app.callback(Output("rush-intensity", "figure"), Input("datasource", "value"))
-def worst_rush_intensity(data_source: str):
-    df = queries.most_rush_intensity(g.db, data_source, limit=30)
+@app.callback(Output("rush-intensity", "figure"), Input("datasource", "value"), Input("month", "value"))
+def worst_rush_intensity(data_source: str, month: int):
+    months = queries.months(g.db)
+    month = months[month]
+    df = queries.most_rush_intensity(g.db, month, data_source, limit=50)
     return px.bar(
         df.sort_values(by="rush_intensity"),
         x="rush_intensity",

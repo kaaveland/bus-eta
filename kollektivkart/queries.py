@@ -107,6 +107,7 @@ def hot_spots(db: DuckDBPyConnection, month: date, hour: int, limit: int = 1000)
 
 def most_rush_intensity(
     db: DuckDBPyConnection,
+    month: date,
     data_source: str | None,
     limit: 100,
 ):
@@ -114,16 +115,16 @@ def most_rush_intensity(
         """
     SELECT
       dataSource,
-      from_stop || ' to ' || to_stop || ' in ' || ' between ' || hour || ':00-' || hour || ':59' as name,
+      from_stop || ' to ' || to_stop || ' between ' || hour || ':00-' || hour || ':59' as name,
       air_distance_km * 1000 :: int as air_distance_m,
       hourly_count,
       round(hourly_duration / monthly_duration, 1) as rush_intensity,
       hourly_duration,
       monthly_duration
     FROM leg_stats
-    WHERE $data_source IS NULL OR dataSource = $data_source
+    WHERE ($data_source IS NULL OR dataSource = $data_source) AND month = $month
     ORDER BY rush_intensity DESC
     LIMIT $limit    
     """,
-        params=dict(data_source=data_source, limit=limit),
+        params=dict(data_source=data_source, limit=limit, month=month),
     ).df()
