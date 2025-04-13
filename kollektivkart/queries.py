@@ -72,7 +72,7 @@ WHERE month = $month and hour = $hour and dataSource = $data_source AND ($line_r
     ).df()
 
 
-def hot_spots(db: DuckDBPyConnection, month: date, hour: int):
+def hot_spots(db: DuckDBPyConnection, month: date, hour: int, limit: int = 1000):
     return db.sql(
         """
     SELECT 
@@ -99,7 +99,31 @@ def hot_spots(db: DuckDBPyConnection, month: date, hour: int):
     FROM leg_stats
     WHERE month = $month and hour = $hour
     ORDER BY rush_intensity DESC
-    LIMIT 1000
+    LIMIT $limit
         """,
-        params=dict(month=month, hour=hour),
+        params=dict(month=month, hour=hour, limit=limit),
+    ).df()
+
+
+def most_rush_intensity(
+    db: DuckDBPyConnection,
+    data_source: str | None,
+    limit: 100,
+):
+    return db.sql(
+        """
+    SELECT
+      dataSource,
+      from_stop || ' to ' || to_stop || ' in ' || ' between ' || hour || ':00-' || hour || ':59' as name,
+      air_distance_km * 1000 :: int as air_distance_m,
+      hourly_count,
+      round(hourly_duration / monthly_duration, 1) as rush_intensity,
+      hourly_duration,
+      monthly_duration
+    FROM leg_stats
+    WHERE $data_source IS NULL OR dataSource = $data_source
+    ORDER BY rush_intensity DESC
+    LIMIT $limit    
+    """,
+        params=dict(data_source=data_source, limit=limit),
     ).df()
