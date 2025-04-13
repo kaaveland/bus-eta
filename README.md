@@ -51,12 +51,12 @@ uv run --with jupyter jupyter
 Run a script:
 
 ```shell
-uv run download_entur.py
+uv run scripts/sync_parquets.py -h
 ```
 
 Run the webapp in development mode (requires extra steps, see Scripts and Dashboard app below):
 ```shell
-uv run webapp.py
+uv run python -m kollektivkart
 ```
 
 ## License
