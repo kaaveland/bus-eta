@@ -8,4 +8,3 @@ def create_tables(db: DuckDBPyConnection, parquet_location: str):
     create table datasource_line as from '{parquet_location}/datasource_line.parquet';
     create table stop_line as from '{parquet_location}/stop_line.parquet';
     """)
-
