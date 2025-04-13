@@ -126,7 +126,8 @@ SELECT
   actual_duration - planned_duration as deviation,
 
   stopPointRef as to_stop,
-  lag(stopPointRef) over w as from_stop
+  lag(stopPointRef) over w as from_stop,
+  serviceJourneyId
 FROM read_parquet('{opts.data}/arrivals.parquet/*/*', hive_partitioning=true)
 WHERE
   date_trunc('month', operatingDate) = $operatingDate
