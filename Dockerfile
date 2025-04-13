@@ -6,7 +6,9 @@ RUN useradd --create-home --home-dir /app --shell /usr/sbin/nologin webapp
 RUN apt-get update && apt-get upgrade -y \
     && rm -rf /var/lib/apt/lists/*
 
-ADD leg_stats.parquet stop_stats.parquet stop_line.parquet pyproject.toml *.py .python-version /app/
+ADD pyproject.toml /app/
+ADD kollektivkart /app/kollektivkart/
+
 WORKDIR /app
 RUN uv sync --no-cache
 
