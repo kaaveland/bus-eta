@@ -87,45 +87,47 @@ This notebook produces a few files:
 - `leg_stats.parquet` contains aggregated statistics for public transit stop-to-stop legs
 - `stop_stats.parquet` contains aggregated statistics for public transit legs that _arrived at each stop_.
  
-It resulted in a set of scripts that can be used to work with different slices of data sets:
-
 ### Scripts
 
-- `download_entur.py` can be easily adapted to produce a DuckDB file with data from the BigQuery tables, it pages
-  through a BigQuery table with the query that I used to get my raw data. I extracted this code from the notebook because
-  I thought someone else might want to use it, and it isn't convenient to run notebooks for this purpose. It will create
-  the `arrivals` table and the `quays` (geolocations of `stopPointRef`) table in DuckDB, see `--help` for more.
-- `calculate_legs.py` can generate transit legs from real time raw data to DuckDB. It assumes the existence of the `arrivals`
-  and `quays` tables and writes to the `legs` table.
-- `aggregate_legs.py` can aggregate `leg_stats.parquet` and `stop_stats.parquet` from transit legs in DuckDB. It assumes
-  the existence of the `legs` table.
-- `export_dash_parquets.py` exports parquet files for consumption by the dash app and convenient data sharing in object storage.
+See the `scripts/` folder for scripts used to download and transform data.
+
+- `sync_parquets.py` -- downloads the `stops`, `quays` and `arrivals` (real time registrations) datasets as parquet files from a specified date: `uv run scripts/sync_parquets.py -h`
+- `calculate_parquet_legs.py` -- relies on the output from `sync_parquets.py` to produce `legs.parquet`, which matches each arrival at a stop, by the arrival from the same vehicle at the previous stop. See `uv run scripts/calculate_parquet_legs.py -h`.
+- `aggregations_for_app.py` -- produces all the parquet files necessary for the dashboard app to start by aggregating legs.
 
 ### Dashboard app
 
-There's a plotly dash app that contains some visualizations in `webapp.py`. It requires `leg_stats.parquet`, 
-`stop_stats.parquet` and `stop_line.parquet`. You can download them from my hetzner object storage, they're
-quite small (less than 100MB total):
+There's a plotly dash app that contains some visualizations in `kollektivkart/`. It requires some data files, see `kollektivkart/initdb.py`.
+
+Samples of these can be found in my public object storage. You can run this to get some data to work with locally:
 
 ```shell
-for f in {leg_stats,stop_stats,stop_line}.parquet; do
-  curl -o $f https://kaaveland-bus-eta-data.hel1.your-objectstorage.com/$f
+for f in {datasources,datasource_line,stop_line,leg_stats}.parquet; do
+  curl -o data/$f https://kaaveland-bus-eta-data.hel1.your-objectstorage.com/devdata/$f
 done
 ```
 
-Run it with `uv run webapp.py` or build it with docker and run it. These files are also necessary to build
-the docker image to run the app.
+Run it with `uv run python -m kollektivkart` or build it with docker and run it. The dash webapp needs these files at 
+runtime to work. If running with docker, use a volume and provide the `PARQUET_LOCATION` environment location to their 
+location. If you want to load them directly from S3, you can provide an environment file like so:
+
+```shell
+AWS_REGION=hel1.your-objectstorage.com
+DUCKDB_S3_ENDPOINT=hel1.your-objectstorage.com
+AWS_ACCESS_KEY_ID=YOUR_OWN_AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY=YOUR_OWN_AWS_SECRET_ACCESS_KEY
+PARQUET_LOCATION=s3://kaaveland-bus-eta-data
+```
 
 ### Deployment
 
-I run this using docker-compose and a nginx reverse proxy at [kollektivkart.arktekk.no](https://kollektivkart.arktekk.no).
+I run this using podman and a nginx reverse proxy at [kollektivkart.arktekk.no](https://kollektivkart.arktekk.no).
 
-You can use the docker image at [ghcr](https://github.com/kaaveland/bus-eta/pkgs/container/bus-eta),
-it bundles the data I extracted in [EnturRealtimeEDA.ipynb](./EnturRealtimeEDA.ipynb).
+You can use the docker image at [ghcr](https://github.com/kaaveland/bus-eta/pkgs/container/bus-eta), as discussed in the Dashboard app section, it requires access to data files.
 
-Feel free to find inspiration in [docker-compose.yml](./docker-compose.yml) or [DEPLOY.md](./DEPLOY.md).
+Feel free to find inspiration in [DEPLOY.md](./DEPLOY.md).
 
-Note that `uv run webapp.py` is not a suitable way to run this application for any sort of load. Put it behind
+Note that `uv run python -m kollektivkart` is not a suitable way to run this application for any sort of load. Put it behind
 [gunicorn](https://gunicorn.org/) or something else suitable. The docker image takes care of this already.
 
 NB! This webapp puts a lot of data (> 500MB) in memory once it loads, so use `--preload` with `gunicorn`.
@@ -147,7 +149,6 @@ here are some things that _should_ be done:
 
 - Tons of usability bugs and annoyances to fix in the webapp.
 - Fix structural issues in the project, separate the scripts, notebooks and the webapp into different packages.
-- Try to refactor the webapp completely, separate out the visualizations into independent modules.
 - Add automated tests.
 - Set up a nightly job to fetch new data and update the app. This also requires introducing partitioning by date
   in order to avoid aggregating through all the old data again.
