@@ -10,7 +10,7 @@ def render_global_inputs(db: DuckDBPyConnection) -> html.Div:
         min=0,
         max=len(months) - 1,
         step=1,
-        marks={i: month.isoformat() for i, month in enumerate(months)},
+        marks={i: month.isoformat() for i, month in enumerate(months) if i % 2 == 0},
         value=len(months) - 1,
         included=False,
     )
