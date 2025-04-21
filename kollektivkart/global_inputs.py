@@ -4,9 +4,6 @@ from duckdb.duckdb import DuckDBPyConnection
 
 
 def render_global_inputs(db: DuckDBPyConnection) -> html.Div:
-    data_sources = dcc.Dropdown(
-        id="datasource", value="RUT", options=queries.datasources_by_name(db)
-    )
     months = queries.months(db)
     month_slider = dcc.Slider(
         id="month",
@@ -23,8 +20,6 @@ def render_global_inputs(db: DuckDBPyConnection) -> html.Div:
 
     return html.Div(
         children=[
-            html.Label("Select data source", htmlFor=data_sources.id),
-            data_sources,
             html.Label("Select year and month", htmlFor=month_slider.id),
             month_slider,
             html.Label("Select hour of day", htmlFor=hour_slider.id),

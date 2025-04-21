@@ -5,6 +5,7 @@ from flask import g
 
 from . import queries
 
+
 def hovertooltip() -> (list[pd.Series], str):
     hover_data = [
         "name",
@@ -19,32 +20,35 @@ def hovertooltip() -> (list[pd.Series], str):
         "hourly_deviation",
         "monthly_deviation",
         "hourly_count",
-        "monthly_count"
+        "monthly_count",
     ]
-    by_ix = {
-        col: i for i, col in enumerate(hover_data)
-    }
-    def col(c): return f"%{{customdata[{by_ix[c]}]}}"
+    by_ix = {col: i for i, col in enumerate(hover_data)}
+
+    def col(c):
+        return f"%{{customdata[{by_ix[c]}]}}"
 
     tooltip = f"""
-{col("name")} distance {col("air_distance_km")}km<br><br>
-Data from {col("hour")}:00 to {col("hour")}:59 for {col("month")}<br><br>
-{col("monthly_count")} vehicles recorded for this month and {col("hourly_count")} in this hour.<br><br>
-Typically {col("monthly_duration")}s travel time, {col("hourly_duration")}s in this hour for rush intensity of {col("rush_intensity")}<br><br>
-Typical monthly delay is {col("monthly_delay")}s, {col("hourly_delay")}s for this hour<br><br>
-Typical monthly deviation is {col("monthly_deviation")}s, {col("hourly_deviation")}s for this hour<br><br>
+<b>{col("name")}</b> distance {col("air_distance_km")}km<br><br>
+{col("monthly_count")} vehicles recorded for this month and {col("hourly_count")} in this hour.<br>
+Monthly median travel time {col("monthly_duration")}s , {col("hourly_duration")}s in this hour.<br>
+Monthly median delay is {col("monthly_delay")}s, {col("hourly_delay")}s for this hour<br>
+Monthly median deviation is {col("monthly_deviation")}s, {col("hourly_deviation")}s for this hour
 """
 
     return hover_data, tooltip
 
 
-
 def draw_map(
-    df: pd.DataFrame, center: dict[str, float], zoom: int, range_color_scale_stop=2.5
+    df: pd.DataFrame,
+    center: dict[str, float],
+    zoom: int,
+    title: str,
+    range_color_scale_stop=2.5,
 ):
     hover_data, tooltip = hovertooltip()
     fig = px.scatter_map(
         df,
+        title=title,
         lat="lat",
         lon="lon",
         size="hourly_count",
@@ -93,15 +97,20 @@ def main_map_view(app: Dash, state: dcc.Store):
     ):
         months = queries.months(g.db)
         month = months[month]
+        name = data_source if line is None else line
+        title = (
+            f"{name} legs for {month.strftime('%Y-%m')} from {hour}:00 to {hour + 1}:00"
+        )
         df = queries.legs(g.db, month, hour, data_source, line)
         map_state = map_state_from_relayout(map_state, relayout_data)
 
-        return draw_map(df, map_state["center"], map_state["zoom"]), map_state
+        return draw_map(df, map_state["center"], map_state["zoom"], title), map_state
 
 
 def hot_spots(app: Dash, state: dcc.Store):
     @app.callback(
         Output("hotspot-map", "figure"),
+        Output("hot-spot-state", "data"),
         Input("month", "value"),
         Input("hour", "value"),
         Input("hotspot-map", "relayoutData"),
@@ -110,6 +119,7 @@ def hot_spots(app: Dash, state: dcc.Store):
     def render_map(month: int, hour: int, relayout_data, map_state):
         months = queries.months(g.db)
         month = months[month]
+        title = f"Legs with highest rush intensity for {month.strftime('%Y-%m')} from {hour}:00 to {hour + 1}:00"
         df = queries.hot_spots(g.db, month, hour)
         map_state = map_state_from_relayout(map_state, relayout_data)
-        return draw_map(df, map_state["center"], map_state["zoom"])
+        return draw_map(df, map_state["center"], map_state["zoom"], title), map_state
