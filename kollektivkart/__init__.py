@@ -1,12 +1,14 @@
 import os
+import io
 
 import flask
 import dash
 import duckdb
-from flask import g
+from flask import g, send_file, request
 from dash import html, dcc, Output, Input
 import plotly.express as px
 
+from . import about
 from . import initdb
 from . import queries
 from . import global_inputs
@@ -74,6 +76,7 @@ app.layout = html.Div(
                             "hour and month, across all data sources (regions)."
                         ),
                         rush_intensity,
+                        html.Div(id="download-hot-spot-csv"),
                     ],
                 ),
                 dcc.Tab(
@@ -93,6 +96,7 @@ app.layout = html.Div(
                         ),
                         dcc.Dropdown(id="line-picker"),
                         dcc.Graph(id="main-map"),
+                        html.Div(id="download-region-csv"),
                     ],
                 ),
                 dcc.Tab(
@@ -107,6 +111,7 @@ app.layout = html.Div(
                         dcc.Graph(id="rush-intensity"),
                     ],
                 ),
+                dcc.Tab(label="About", value="about", children=about.create(db)),
             ],
         ),
     ]
@@ -122,6 +127,71 @@ def set_lines_for_data_source(data_source: str):
 
 mapview.main_map_view(app, state)
 mapview.hot_spots(app, hot_spots_state)
+
+
+@app.callback(
+    Output("download-hot-spot-csv", "children"),
+    Input("month", "value"),
+    Input("hour", "value"),
+)
+def set_download_hotspot_link(month, hour):
+    return [
+        dcc.Link(
+            "You can click here to download a CSV with hot spots for the currently selected time.",
+            href=f"/hot-spots/{month}/{hour}/legs.csv",
+            target="__blank",
+        )
+    ]
+
+
+@server.route("/hot-spots/<int:month>/<int:hour>/legs.csv")
+def hot_spot_csv(month, hour):
+    months = queries.months(g.db)
+    month = months[month]
+    data = queries.legs_for_download(db, month, hour, limit=1000)
+    csv = io.StringIO()
+    data.to_csv(csv, header=True, index=False)
+    return send_file(
+        io.BytesIO(csv.getvalue().encode()),
+        mimetype="text/csv",
+        as_attachment=True,
+        download_name=f"hot_spots_{month.isoformat()}_{hour}.csv",
+    )
+
+
+@app.callback(
+    Output("download-region-csv", "children"),
+    Input("month", "value"),
+    Input("hour", "value"),
+    Input("datasource", "value"),
+    Input("line-picker", "value"),
+)
+def set_download_region_link(month, hour, data_source, line_ref):
+    q = f"?line_ref={line_ref}" if line_ref is not None else ""
+
+    return [
+        dcc.Link(
+            "You can click here to download a CSV with statistics for the currently selected time, data source and line.",
+            href=f"/region/{data_source}/{month}/{hour}/legs.csv{q}",
+            target="__blank",
+        )
+    ]
+
+
+@server.route("/region/<data_source>/<int:month>/<int:hour>/legs.csv")
+def region_csv(data_source, month, hour):
+    months = queries.months(g.db)
+    month = months[month]
+    line_ref = request.args.get("line_ref")
+    data = queries.legs_for_download(db, month, hour, data_source, line_ref)
+    csv = io.StringIO()
+    data.to_csv(csv, header=True, index=False)
+    return send_file(
+        io.BytesIO(csv.getvalue().encode()),
+        mimetype="text/csv",
+        as_attachment=True,
+        download_name=f"{data_source}_{month.isoformat()}_{hour}.csv",
+    )
 
 
 @app.callback(

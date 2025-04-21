@@ -37,6 +37,59 @@ def months(db: DuckDBPyConnection) -> list[date]:
     ]
 
 
+def legs_for_download(
+    db: DuckDBPyConnection,
+    month: date,
+    hour: int,
+    data_source: str | None = None,
+    line_ref: str | None = None,
+    limit: int | None = None,
+) -> pd.DataFrame:
+    limit = f"LIMIT {limit}" if isinstance(limit, int) else ""
+    join_stop = (
+        "JOIN stop_line USING (dataSource, from_stop, to_stop)"
+        if line_ref is not None
+        else ""
+    )
+    where_line = (
+        " AND ($line_ref is null OR $line_ref = stop_line.lineRef)"
+        if line_ref is not None
+        else ""
+    )
+    sql = f"""
+SELECT 
+  dataSource,
+  month,  
+  from_stop,
+  to_stop,
+  air_distance_km,
+  from_lat,
+  from_lon,
+  to_lat,
+  to_lon,
+  round(hourly_duration / monthly_duration, 1) as rush_intensity,
+  hourly_duration,
+  hourly_quartile,  
+  monthly_duration,
+  monthly_quartile,  
+  monthly_delay,
+  hourly_delay,
+  monthly_deviation,
+  hourly_deviation,
+  monthly_count,
+  hourly_count,  
+FROM leg_stats {join_stop}
+WHERE month = $month and hour = $hour and ($data_source is null or dataSource = $data_source) {where_line}
+ORDER BY rush_intensity desc
+{limit}
+    """
+    params = dict(month=month, hour=hour, data_source=data_source)
+    if line_ref:
+        params["line_ref"] = line_ref
+
+    return db.sql(sql, params=params).df()
+
+
 def legs(
     db: DuckDBPyConnection,
     month: date,
@@ -116,3 +169,50 @@ def most_rush_intensity(
     """,
         params=dict(data_source=data_source, limit=limit, month=month),
     ).df()
+
+
+def total_transports(db: DuckDBPyConnection) -> int:
+    r = db.sql("select sum(hourly_count) as count from leg_stats").fetchall()
+    return r[0][0]
+
+
+def min_max_date(
+    db: DuckDBPyConnection, parquet_location: str
+) -> tuple[date, date] | None:
+    parquet = f"{parquet_location}/arrivals.parquet/*/*"
+    try:
+        r = db.sql(
+            """
+            select min(operatingDate), max(operatingDate)
+            from read_parquet($parquet, hive_partitioning=true) 
+        """,
+            params=dict(parquet=parquet),
+        ).fetchall()
+        return tuple(r[0])
+    except Exception:
+        return None
+
+
+def total_arrivals(db: DuckDBPyConnection, parquet_location: str) -> int | None:
+    parquet = f"{parquet_location}/arrivals.parquet/*/*"
+    try:
+        r = db.sql(
+            """
+            select count(*)
+            from read_parquet($parquet, hive_partitioning=true) 
+        """,
+            params=dict(parquet=parquet),
+        ).fetchall()
+        return r[0][0]
+    except Exception:
+        return None
+
+
+def leg_stat_count(db: DuckDBPyConnection) -> int:
+    return db.sql("select count(*) from leg_stats").fetchall()[0][0]
+
+
+def duckdb_memory(db: DuckDBPyConnection) -> int:
+    return db.sql("select sum(memory_usage_bytes) from duckdb_memory();").fetchall()[0][
+        0
+    ]
