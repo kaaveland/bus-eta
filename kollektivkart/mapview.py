@@ -9,8 +9,6 @@ from . import queries
 def hovertooltip() -> (list[pd.Series], str):
     hover_data = [
         "name",
-        "month",
-        "hour",
         "air_distance_km",
         "rush_intensity",
         "hourly_duration",
@@ -29,6 +27,7 @@ def hovertooltip() -> (list[pd.Series], str):
 
     tooltip = f"""
 <b>{col("name")}</b> distance {col("air_distance_km")}km<br><br>
+Rush intensity {col("rush_intensity")}<br>
 {col("monthly_count")} vehicles recorded for this month and {col("hourly_count")} in this hour.<br>
 Monthly median travel time {col("monthly_duration")}s , {col("hourly_duration")}s in this hour.<br>
 Monthly median delay is {col("monthly_delay")}s, {col("hourly_delay")}s for this hour<br>

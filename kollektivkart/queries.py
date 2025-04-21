@@ -20,7 +20,9 @@ def lines_for_datasource(db: DuckDBPyConnection, data_source: str) -> dict[str, 
     return {
         row[0].split(":")[-1]: row[0]
         for row in db.query(
-            "select lineRef from datasource_line where dataSource = $data_source order by lineRef",
+            """select lineRef from datasource_line 
+               where dataSource = $data_source 
+               order by cast(regexp_extract(lineRef, '(\\d+)$') as int)""",
             params=dict(data_source=data_source),
         ).fetchall()
     }
@@ -45,20 +47,13 @@ def legs(
     return db.sql(
         """
 SELECT 
-  from_stop,
-  to_stop,
   from_stop || ' to ' || to_stop as name,
-  month,
-  hour,
   air_distance_km :: text as air_distance_km,
   from_lat * .985 + to_lat * .015 as lat,
   from_lon * .985 + to_lon * .015 as lon,
   round(hourly_duration / monthly_duration, 1) as rush_intensity,
-  round(hourly_quartile / monthly_quartile, 1) as rush_intensity_quartile,
   hourly_duration,
-  hourly_quartile,
   monthly_duration,
-  monthly_quartile,
   monthly_delay,
   hourly_delay,
   monthly_deviation,
@@ -76,20 +71,13 @@ def hot_spots(db: DuckDBPyConnection, month: date, hour: int, limit: int = 1000)
     return db.sql(
         """
     SELECT 
-      from_stop,
-      to_stop,
       from_stop || ' to ' || to_stop as name,
-      month,
-      hour,
       air_distance_km :: text as air_distance_km,
       from_lat * .985 + to_lat * .015 as lat,
       from_lon * .985 + to_lon * .015 as lon,
       round(hourly_duration / monthly_duration, 1) as rush_intensity,
-      round(hourly_quartile / monthly_quartile, 1) as rush_intensity_quartile,
       hourly_duration,
-      hourly_quartile,
       monthly_duration,
-      monthly_quartile,
       monthly_delay,
       hourly_delay,
       monthly_deviation,
