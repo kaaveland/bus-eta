@@ -117,6 +117,7 @@ with hourly as (
     median(delay) :: int4 as hourly_delay,
     median(deviation) :: int4 as hourly_deviation,
     count(*) as hourly_count
+  where extract(weekday from start_time) != 0 and extract(weekday from start_time) != 6 
   group by month, hour, dataSource, from_stop, to_stop
 ), monthly as (
   from read_parquet('{opts.data}/legs.parquet/*/*', hive_partitioning=true)
@@ -137,10 +138,11 @@ with hourly as (
     any_value(from_lon) as from_lon,
     any_value(to_lat) as to_lat,
     any_value(to_lon) as to_lon,
+  where extract(weekday from start_time) != 0 and extract(weekday from start_time) != 6  
   group by month, dataSource, from_stop, to_stop
 )
 from hourly join monthly using(dataSource, from_stop, to_stop, month)
-where hourly_count > 27 and air_distance_km > 0.001 and month = $month
+where hourly_count > 20 and air_distance_km > 0.001 and month = $month
 ) to '{opts.data}/leg_stats.parquet' (format parquet, partition_by (month), overwrite_or_ignore);
 """
 
