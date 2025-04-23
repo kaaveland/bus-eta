@@ -50,7 +50,9 @@ hot_spots_state = dcc.Store(
 rush_intensity = html.P(
     "Rush intensity is a measure of how much slower traffic flows between 2 stops during one particular "
     "hour, compared to the rest of the day, measured for a whole month. A rush intensity of 2 between "
-    "8:00 and 9:00 means traffic takes twice as much time as what is normal for the rest of the day. "
+    "8:00 and 9:00 means traffic takes twice as much time as what is normal for the rest of the day. The "
+    "rush intensity is calculated by finding the 75% percentile travel time during the chosen hour and "
+    "dividing it by the 50% percentile travel time during the whole month."
 )
 
 app.layout = html.Div(
@@ -210,7 +212,12 @@ def worst_rush_intensity(data_source: str, month: int):
         orientation="h",
         height=800,
         color="hourly_count",
-        hover_data=["air_distance_m", "hourly_duration", "monthly_duration"],
+        hover_data=[
+            "air_distance_m",
+            "hourly_duration",
+            "hourly_quartile",
+            "monthly_duration",
+        ],
     )
 
 

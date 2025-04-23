@@ -106,6 +106,7 @@ SELECT
   date_trunc('month', operatingDate) as month,
   lineRef,
   dataSource,
+  directionRef,
 
   coalesce(
     lag(arrivalTime) over w,

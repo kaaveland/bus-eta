@@ -11,6 +11,7 @@ def hovertooltip() -> (list[pd.Series], str):
         "name",
         "air_distance_km",
         "rush_intensity",
+        "hourly_quartile",
         "hourly_duration",
         "monthly_duration",
         "hourly_delay",
@@ -22,12 +23,12 @@ def hovertooltip() -> (list[pd.Series], str):
     ]
     by_ix = {col: i for i, col in enumerate(hover_data)}
 
-    def col(c):
-        return f"%{{customdata[{by_ix[c]}]}}"
+    def col(c, fmt=""):
+        return f"%{{customdata[{by_ix[c]}]{fmt}}}"
 
     tooltip = f"""
 <b>{col("name")}</b> distance {col("air_distance_km")}km<br><br>
-Rush intensity {col("rush_intensity")}<br>
+Rush intensity {col("rush_intensity", fmt=':.1f')}, 25% of transports take longer than {col("hourly_quartile")}s in this hour<br>
 {col("monthly_count")} vehicles recorded for this month and {col("hourly_count")} in this hour.<br>
 Monthly median travel time {col("monthly_duration")}s , {col("hourly_duration")}s in this hour.<br>
 Monthly median delay is {col("monthly_delay")}s, {col("hourly_delay")}s for this hour<br>
@@ -42,7 +43,7 @@ def draw_map(
     center: dict[str, float],
     zoom: int,
     title: str,
-    range_color_scale_stop=2.5,
+    range_color_scale_stop=5,
 ):
     hover_data, tooltip = hovertooltip()
     fig = px.scatter_map(
