@@ -6,7 +6,7 @@ from flask import g
 from . import queries
 
 
-def hovertooltip() -> (list[pd.Series], str):
+def hovertooltip(hour: int) -> (list[pd.Series], str):
     hover_data = [
         "name",
         "air_distance_km",
@@ -22,17 +22,19 @@ def hovertooltip() -> (list[pd.Series], str):
         "monthly_count",
     ]
     by_ix = {col: i for i, col in enumerate(hover_data)}
+    this_hour = f"between {hour}:00 and {hour + 1 }:00"
 
     def col(c, fmt=""):
         return f"%{{customdata[{by_ix[c]}]{fmt}}}"
 
     tooltip = f"""
-<b>{col("name")}</b> distance {col("air_distance_km")}km<br><br>
-Rush intensity {col("rush_intensity", fmt=':.1f')}, 25% of transports take longer than {col("hourly_quartile")}s in this hour<br>
-{col("monthly_count")} vehicles recorded for this month and {col("hourly_count")} in this hour.<br>
-Monthly median travel time {col("monthly_duration")}s , {col("hourly_duration")}s in this hour.<br>
-Monthly median delay is {col("monthly_delay")}s, {col("hourly_delay")}s for this hour<br>
-Monthly median deviation is {col("monthly_deviation")}s, {col("hourly_deviation")}s for this hour
+<b>{col("name")}</b> {this_hour}<br>
+Air distance {col("air_distance_km")}km<br><br>
+Rush intensity {col("rush_intensity", fmt=':.1f')}, 25% of transports take longer than {col("hourly_quartile")}s {this_hour}<br>
+{col("monthly_count")} vehicles recorded for this month and {col("hourly_count")} {this_hour}<br>
+Monthly median travel time {col("monthly_duration")}s , {col("hourly_duration")}s {this_hour}<br>
+Monthly median delay is {col("monthly_delay")}s, {col("hourly_delay")}s {this_hour}<br>
+Monthly median deviation is {col("monthly_deviation")}s, {col("hourly_deviation")}s {this_hour}
 """
 
     return hover_data, tooltip
@@ -40,12 +42,13 @@ Monthly median deviation is {col("monthly_deviation")}s, {col("hourly_deviation"
 
 def draw_map(
     df: pd.DataFrame,
+    hour: int,
     center: dict[str, float],
     zoom: int,
     title: str,
     range_color_scale_stop=5,
 ):
-    hover_data, tooltip = hovertooltip()
+    hover_data, tooltip = hovertooltip(hour)
     fig = px.scatter_map(
         df,
         title=title,
@@ -104,7 +107,7 @@ def main_map_view(app: Dash, state: dcc.Store):
         df = queries.legs(g.db, month, hour, data_source, line)
         map_state = map_state_from_relayout(map_state, relayout_data)
 
-        return draw_map(df, map_state["center"], map_state["zoom"], title), map_state
+        return draw_map(df, hour, map_state["center"], map_state["zoom"], title), map_state
 
 
 def hot_spots(app: Dash, state: dcc.Store):
@@ -122,4 +125,4 @@ def hot_spots(app: Dash, state: dcc.Store):
         title = f"Legs with highest rush intensity for {month.strftime('%Y-%m')} from {hour}:00 to {hour + 1}:00"
         df = queries.hot_spots(g.db, month, hour)
         map_state = map_state_from_relayout(map_state, relayout_data)
-        return draw_map(df, map_state["center"], map_state["zoom"], title), map_state
+        return draw_map(df, hour, map_state["center"], map_state["zoom"], title), map_state
