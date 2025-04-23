@@ -1,6 +1,9 @@
 name: Build webapp image
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch: # Trigger workflow manually
 
 permissions:
