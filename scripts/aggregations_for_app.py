@@ -90,7 +90,11 @@ try:
     completed_partitions = {
         row[0]
         for row in db.query(
-            f"select distinct month from read_parquet('{opts.data}/leg_stats.parquet/*/*')"
+            f"""
+            select distinct month from read_parquet('{opts.data}/leg_stats.parquet/*/*')
+            union
+            select distinct month from read_parquet('{opts.data}/line_stats.parquet/*/*')
+            """
         ).fetchall()
     }
 except duckdb.IOException as _not_exists:
@@ -117,7 +121,9 @@ with hourly as (
     median(delay) :: int4 as hourly_delay,
     median(deviation) :: int4 as hourly_deviation,
     count(*) as hourly_count
-  where extract(weekday from start_time) != 0 and extract(weekday from start_time) != 6 
+  where
+    extract(weekday from start_time) != 0 and extract(weekday from start_time) != 6
+    and month = $month  
   group by month, hour, dataSource, from_stop, to_stop
 ), monthly as (
   from read_parquet('{opts.data}/legs.parquet/*/*', hive_partitioning=true)
@@ -138,7 +144,9 @@ with hourly as (
     any_value(from_lon) as from_lon,
     any_value(to_lat) as to_lat,
     any_value(to_lon) as to_lon,
-  where extract(weekday from start_time) != 0 and extract(weekday from start_time) != 6  
+  where 
+    extract(weekday from start_time) != 0 and extract(weekday from start_time) != 6
+    and month = $month  
   group by month, dataSource, from_stop, to_stop
 )
 from hourly join monthly using(dataSource, from_stop, to_stop, month)
@@ -146,5 +154,60 @@ where hourly_count > 20 and air_distance_km > 0.001 and month = $month
 ) to '{opts.data}/leg_stats.parquet' (format parquet, partition_by (month), overwrite_or_ignore);
 """
 
+line_agg = f"""
+copy (
+with hourly as (
+  from read_parquet('{opts.data}/legs.parquet/*/*', hive_partitioning=true)
+  select 
+    dataSource, 
+    from_stop, 
+    to_stop,
+    month,
+    lineRef,
+    directionRef,
+    extract(hour from start_time) as hour,
+    quantile_disc(
+      actual_duration, .75
+    ) as hourly_quartile,
+    median(actual_duration) :: int4 as hourly_duration,
+    median(delay) :: int4 as hourly_delay,
+    median(deviation) :: int4 as hourly_deviation,
+    count(*) as hourly_count
+  where 
+    extract(weekday from start_time) != 0 and extract(weekday from start_time) != 6
+    and month = $month 
+  group by month, hour, dataSource, lineRef, directionRef, from_stop, to_stop
+), monthly as (
+  from read_parquet('{opts.data}/legs.parquet/*/*', hive_partitioning=true)
+  select 
+    dataSource,
+    from_stop, 
+    to_stop,
+    month,
+    lineRef,
+    directionRef,    
+    median(actual_duration) :: int4 as monthly_duration,
+      quantile_disc(
+      actual_duration, .75
+    ) as monthly_quartile,
+    median(delay) :: int4 as monthly_delay,
+    median(deviation) :: int4 as monthly_deviation,
+    count(*) as monthly_count,
+    round(any_value(air_distance_km), 1) as air_distance_km,
+    any_value(from_lat) as from_lat,
+    any_value(from_lon) as from_lon,
+    any_value(to_lat) as to_lat,
+    any_value(to_lon) as to_lon,
+  where 
+    extract(weekday from start_time) != 0 and extract(weekday from start_time) != 6
+    and month = $month  
+  group by month, dataSource, lineRef, directionRef, from_stop, to_stop
+)
+from hourly join monthly using(dataSource, from_stop, to_stop, month)
+where hourly_count >= 20 and air_distance_km > 0.001 and month = $month
+) to '{opts.data}/line_stats.parquet' (format parquet, partition_by (month), overwrite_or_ignore);
+"""
+
 for month in tqdm.tqdm(sorted(required_partitions)):
     duckdb.execute(agg, parameters=dict(month=month))
+    duckdb.execute(line_agg, parameters=dict(month=month))

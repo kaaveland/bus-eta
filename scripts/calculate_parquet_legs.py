@@ -107,6 +107,7 @@ SELECT
   lineRef,
   dataSource,
   directionRef,
+  lag(sequenceNr) over w as sequenceNr,
 
   coalesce(
     lag(arrivalTime) over w,
