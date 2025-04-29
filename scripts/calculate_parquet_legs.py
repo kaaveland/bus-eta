@@ -78,7 +78,7 @@ FROM stops join quays on stops.id = quays.stopPlaceRef
 available_partitions = {
     row[0]
     for row in db.query(
-        f"select distinct date_trunc('month', operatingDate) from read_parquet('{opts.data}/arrivals.parquet/*/*', hive_partitioning=true)"
+        f"select distinct date_trunc('month', operatingDate) as month from read_parquet('{opts.data}/arrivals.parquet/*/*', hive_partitioning=true)"
     ).fetchall()
 }
 
@@ -88,7 +88,7 @@ try:
     completed_partitions = {
         row[0]
         for row in db.sql(
-            "select distinct date_trunc('month', operatingDate) from read_parquet($legs, hive_partitioning=true)",
+            "select month from read_parquet($legs, hive_partitioning=true)",
             params=dict(legs=f"{legs}/*/*"),
         ).fetchall()
     }
@@ -103,10 +103,10 @@ legs_view = f"""
 CREATE OR REPLACE TEMPORARY TABLE legs AS
 SELECT
   operatingDate,
-  date_trunc('month', operatingDate) as month,
   lineRef,
   dataSource,
   directionRef,
+  date_trunc('month', operatingDate) as month,
   lag(sequenceNr) over w as sequenceNr,
 
   coalesce(
@@ -130,9 +130,9 @@ SELECT
   stopPointRef as to_stop,
   lag(stopPointRef) over w as from_stop,
   serviceJourneyId
-FROM read_parquet('{opts.data}/arrivals.parquet/*/*', hive_partitioning=true)
+FROM read_parquet('{opts.data}/arrivals.parquet/*/*', hive_partitioning=true) a
 WHERE
-  date_trunc('month', operatingDate) = $operatingDate
+  month = $operatingDate
   AND NOT (estimated OR journeyCancellation OR extraCall OR stopCancellation)
   AND abs(delay) < 3600
 WINDOW W AS (
@@ -141,14 +141,20 @@ WINDOW W AS (
 QUALIFY
   from_stop IS NOT NULL
   AND actual_duration > 0
-  AND abs(deviation) < 1800;
+  -- Only the first visit at this stop
+  AND row_number() over (partition by (operatingDate, serviceJourneyId, stopPointRef) order by sequenceNr asc) = 1
+  AND abs(deviation) < 1800
+  AND NOT (
+      bool_or(extraCall) over w
+      or bool_or(estimated) over w 
+      or bool_or(journeyCancellation) over w 
+      or bool_or(stopCancellation) over w)
 """
 
 unique_legs = """
 WITH unique_legs AS (
     SELECT DISTINCT from_stop, to_stop
     FROM legs
-    WHERE from_stop != to_stop
 )
 SELECT
     legs.from_stop,

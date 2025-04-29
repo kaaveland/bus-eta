@@ -185,7 +185,7 @@ with hourly as (
     to_stop,
     month,
     lineRef,
-    directionRef,    
+    directionRef,
     median(actual_duration) :: int4 as monthly_duration,
       quantile_disc(
       actual_duration, .75
