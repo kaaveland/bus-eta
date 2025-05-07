@@ -44,8 +44,8 @@ parser.add_argument(
 _setup = """
 set threads = {threads};
 set memory_limit = '{mem_limit}GB';
-load spatial;
 install spatial;
+load spatial;
 """
 
 
