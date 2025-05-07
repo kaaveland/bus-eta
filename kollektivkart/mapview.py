@@ -107,7 +107,9 @@ def main_map_view(app: Dash, state: dcc.Store):
         df = queries.legs(g.db, month, hour, data_source, line)
         map_state = map_state_from_relayout(map_state, relayout_data)
 
-        return draw_map(df, hour, map_state["center"], map_state["zoom"], title), map_state
+        return draw_map(
+            df, hour, map_state["center"], map_state["zoom"], title
+        ), map_state
 
 
 def hot_spots(app: Dash, state: dcc.Store):
@@ -125,4 +127,6 @@ def hot_spots(app: Dash, state: dcc.Store):
         title = f"Legs with highest rush intensity for {month.strftime('%Y-%m')} from {hour}:00 to {hour + 1}:00"
         df = queries.hot_spots(g.db, month, hour)
         map_state = map_state_from_relayout(map_state, relayout_data)
-        return draw_map(df, hour, map_state["center"], map_state["zoom"], title), map_state
+        return draw_map(
+            df, hour, map_state["center"], map_state["zoom"], title
+        ), map_state

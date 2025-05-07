@@ -190,7 +190,6 @@ SELECT
 FROM legs
   JOIN leg_distances ld USING(from_stop, to_stop)
 WHERE speed_kmh < 250
-  AND ld.prev_name != ld.now_name
 ORDER BY operatingDate, from_stop, lineRef -- try to get good clustering for compression purposes
 ) TO '{opts.data}/legs.parquet' (format parquet, partition_by (month), overwrite_or_ignore);
 """
