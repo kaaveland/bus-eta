@@ -10,7 +10,7 @@ ADD pyproject.toml /app/
 ADD kollektivkart /app/kollektivkart/
 
 WORKDIR /app
-RUN uv sync --no-cache
+RUN uv sync --no-cache --extra=scripts
 
 USER webapp
 EXPOSE 8000

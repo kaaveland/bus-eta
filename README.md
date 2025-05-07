@@ -28,7 +28,7 @@ uv sync --all-extras
 Install all dependencies for the scripts, but skip jupyter:
 
 ```shell
-uv sync --extras=scripts
+uv sync --extra=scripts
 ```
 
 Install dependencies for the webapp only (also requires data files, see below):
