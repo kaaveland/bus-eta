@@ -1,4 +1,4 @@
-from kollektivkart import app
+from kollektivkart import webapp
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    webapp.app.run_server(debug=True)
