@@ -122,7 +122,7 @@ def sync_arrivals(
     available = available_daily_partitions(db, dest)
     need = wanted - available
     for partition in need:
-        logging.info("Syncing {} from arrivals", partition.isoformat())
+        logging.info("Syncing %s from arrivals", partition.isoformat())
         batch = fetch_arrivals_partition(client, partition)
         db.register("batch", batch)
         duckdb.execute(
