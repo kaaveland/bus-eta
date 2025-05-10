@@ -30,7 +30,7 @@ parser.add_argument(
 parser.add_argument(
     "--memory-limit-gb",
     default=int(0.8 * psutil.virtual_memory().available / 1e9),
-    help="GB of memory to allow DuckDB (default 80% of available)",
+    help="GB of memory to allow DuckDB (default 80%% of available)",
     type=int,
 )
 parser.add_argument(
@@ -67,4 +67,5 @@ def main():
 
 
 if __name__ == "__main__":
+    parser.print_help()
     main()

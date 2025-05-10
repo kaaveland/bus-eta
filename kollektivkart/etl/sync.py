@@ -95,7 +95,7 @@ def sync_stops(client: bigquery.Client, db: DuckDBPyConnection, root: str):
     stops = fetch_stops(client)
     dest = join(root, "stops.parquet")
     db.register("stops", stops)
-    db.execute(f"copy stops to '{dest}';")
+    db.execute(f"copy stops to '{dest}' (format parquet, overwrite);")
     db.unregister("stops")
 
 
@@ -103,7 +103,7 @@ def sync_quays(client: bigquery.Client, db: DuckDBPyConnection, root: str):
     quays = fetch_quays(client)
     dest = join(root, "quays.parquet")
     db.register("quays", quays)
-    db.execute(f"copy quays to '{dest}';")
+    db.execute(f"copy quays to '{dest}' (format parquet, overwrite);")
     db.unregister("quays")
 
 

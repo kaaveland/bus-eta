@@ -25,7 +25,7 @@ Install dependencies, including jupyter (required for IDE-integration with noteb
 uv sync --all-extras
 ```
 
-Install all dependencies for the scripts, but skip jupyter:
+Install all dependencies for the scripts but skip jupyter:
 
 ```shell
 uv sync --extra=scripts
@@ -48,10 +48,10 @@ Run jupyter:
 uv run --with jupyter jupyter
 ```
 
-Run a script:
+Run the scripts to build a data repository:
 
 ```shell
-uv run scripts/sync_parquets.py -h
+uv run python -m kollektivkart.etl -h
 ```
 
 Run the webapp in development mode (requires extra steps, see Scripts and Dashboard app below):
@@ -86,14 +86,6 @@ This notebook produces a few files:
 - `entur.db` which is a DuckDB instance with several tables, including `arrivals`
 - `leg_stats.parquet` contains aggregated statistics for public transit stop-to-stop legs
 - `stop_stats.parquet` contains aggregated statistics for public transit legs that _arrived at each stop_.
- 
-### Scripts
-
-See the `scripts/` folder for scripts used to download and transform data.
-
-- `sync_parquets.py` -- downloads the `stops`, `quays` and `arrivals` (real time registrations) datasets as parquet files from a specified date: `uv run scripts/sync_parquets.py -h`
-- `calculate_parquet_legs.py` -- relies on the output from `sync_parquets.py` to produce `legs.parquet`, which matches each arrival at a stop, by the arrival from the same vehicle at the previous stop. See `uv run scripts/calculate_parquet_legs.py -h`.
-- `aggregations_for_app.py` -- produces all the parquet files necessary for the dashboard app to start by aggregating legs.
 
 ### Dashboard app
 
@@ -131,7 +123,7 @@ Note that `uv run python -m kollektivkart` is not a suitable way to run this app
 [gunicorn](https://gunicorn.org/) or something else suitable. The docker image takes care of this already.
 
 NB! This webapp puts a lot of data (> 500MB) in memory once it loads, so use `--preload` with `gunicorn`.
-This ensures faster startup and also since this memory is only written once, it can be shared with copy-on-write
+This ensures a faster startup and also since this memory is only written once, it can be shared with copy-on-write
 memory between the workers. This lets you run many workers without using a lot of RAM. gunicorn usually
 recommends 1-2 workers per CPU, but since DuckDB is also threaded on the C level, 2 workers per CPU may be a 
 little high.
