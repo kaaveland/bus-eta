@@ -4,7 +4,7 @@ import io
 import flask
 import dash
 import duckdb
-from flask import g, send_file, request
+from flask import g, send_file, request, jsonify
 from dash import html, dcc, Output, Input
 import plotly.express as px
 
@@ -219,3 +219,9 @@ def worst_rush_intensity(data_source: str, month: int):
             "monthly_duration",
         ],
     )
+
+@server.route("/ready")
+def readycheck():
+    return jsonify(dict(
+        status="up"
+    ))
