@@ -25,12 +25,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Download data files
-        run: |
-          for f in {leg_stats,stop_stats,stop_line}.parquet; do
-              curl -o $f https://kaaveland-bus-eta-data.hel1.your-objectstorage.com/$f
-          done
-
       - name: Build Docker image
         run: |
           version=${{ github.sha }}
@@ -40,3 +34,24 @@ jobs:
             -t ghcr.io/${{ github.repository }}:latest \
             -t ghcr.io/${{ github.repository }}:$version \
             --push
+
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://kollektivkart.kaveland.no
+    needs: build-and-push
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up SSH key
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_KEY }}
+
+      - name: Deploy with SSH
+        run: |
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+          ssh ${{ secrets.SSH_HOST }} 'podman pull ghcr.io/kaaveland/bus-eta && ./rolling-restart'
