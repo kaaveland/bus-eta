@@ -12,7 +12,7 @@ COPY (
     SELECT dataSource, max_by(dataSourceName, operatingDate) as dataSourceName
     FROM read_parquet($arrivals, hive_partitioning=true)
     GROUP BY dataSource
-) TO '{dest} (format parquet, overwrite);'
+) TO '{dest}' (format parquet, overwrite);
 """
 
 
@@ -28,7 +28,7 @@ _datasource_lines = """
 COPY (
     SELECT DISTINCT dataSource, lineRef
     FROM read_parquet($legs, hive_partitioning=true)
-) TO '{dest} (format parquet, overwrite);'
+) TO '{dest}' (format parquet, overwrite);
 """
 
 
@@ -42,7 +42,7 @@ _stop_line = """
 COPY (
     SELECT DISTINCT lineRef, dataSource, from_stop, to_stop
     FROM read_parquet($legs, hive_partitioning=true)
-) TO '{dest} (format parquet, overwrite);'
+) TO '{dest}' (format parquet, overwrite);
 """
 
 
