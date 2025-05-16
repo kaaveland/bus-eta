@@ -1,12 +1,14 @@
 import os
 import io
+import json
 
 import flask
 import dash
 import duckdb
-from flask import g, send_file, request, jsonify
+from flask import g, send_file, request, jsonify, Response
 from dash import html, dcc, Output, Input
 import plotly.express as px
+from datetime import timedelta, date
 
 from . import about
 from . import initdb
@@ -18,9 +20,8 @@ from . import api
 db = duckdb.connect()
 initdb.create_tables(db, os.environ.get("PARQUET_LOCATION", "data"))
 server = flask.Flask(__name__)
-server.register_blueprint(
-    api.app, url_prefix="/api"
-)
+server.register_blueprint(api.app, url_prefix="/api")
+
 
 @server.before_request
 def connect_db():
@@ -31,8 +32,6 @@ def connect_db():
 def close_db(r):
     g.db.close()
     return r
-
-
 
 
 external_scripts = (
@@ -94,7 +93,7 @@ app.layout = html.Div(
                         html.Label("Select data source", htmlFor="datasource"),
                         dcc.Dropdown(
                             id="datasource",
-                            #value="RUT",
+                            # value="RUT",
                             options=queries.datasources_by_name(db),
                         ),
                         html.Label(
@@ -225,8 +224,14 @@ def worst_rush_intensity(data_source: str, month: int):
         ],
     )
 
+
 @server.route("/ready")
 def readycheck():
-    return jsonify(dict(
-        status="up"
-    ))
+    latest_data = date.fromisoformat(api.get_stats()["date_range"]["end"])
+    stale = latest_data < date.today() - timedelta(days=2)
+    response = dict(status="up", data_date=latest_data.isoformat(), stale=stale)
+    return Response(
+        json.dumps(response),
+        status=500 if stale else 200,
+        content_type="application/json",
+    )
