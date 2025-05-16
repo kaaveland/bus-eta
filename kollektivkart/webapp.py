@@ -13,11 +13,14 @@ from . import initdb
 from . import queries
 from . import global_inputs
 from . import mapview
+from . import api
 
 db = duckdb.connect()
 initdb.create_tables(db, os.environ.get("PARQUET_LOCATION", "data"))
 server = flask.Flask(__name__)
-
+server.register_blueprint(
+    api.app, url_prefix="/api"
+)
 
 @server.before_request
 def connect_db():
@@ -28,6 +31,8 @@ def connect_db():
 def close_db(r):
     g.db.close()
     return r
+
+
 
 
 external_scripts = (
@@ -89,7 +94,7 @@ app.layout = html.Div(
                         html.Label("Select data source", htmlFor="datasource"),
                         dcc.Dropdown(
                             id="datasource",
-                            value="RUT",
+                            #value="RUT",
                             options=queries.datasources_by_name(db),
                         ),
                         html.Label(

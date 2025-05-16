@@ -121,7 +121,7 @@ WHERE month = $month and hour = $hour and dataSource = $data_source AND ($line_r
     ).df()
 
 
-def hot_spots(db: DuckDBPyConnection, month: date, hour: int, limit: int = 1000):
+def hot_spots(db: DuckDBPyConnection, month: date, hour: int, limit: int = 1000) -> pd.DataFrame:
     return db.sql(
         """
     SELECT 
