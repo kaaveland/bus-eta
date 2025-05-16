@@ -25,7 +25,10 @@ def set_headers(response: Response) -> Response:
 
 
 def to_json(df: pd.DataFrame) -> Response:
-    return Response(df.to_json(orient="columns"), content_type="application/json")
+    return jsonify(
+        df.to_dict(orient="list")
+    )
+    #return Response(df.to_json(orient="values"), content_type="application/json")
 
 
 @app.route("/hot-spots/<int:year>/<int:month>/<int:hour>")
