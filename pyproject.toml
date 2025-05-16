@@ -14,7 +14,6 @@ dependencies = [
     "dash>=2.18.2",
     "gunicorn>=23.0.0",
     "orjson>=3.10.18",
-    "flask-orjson>=2.0.0",
 ]
 
 [project.optional-dependencies]

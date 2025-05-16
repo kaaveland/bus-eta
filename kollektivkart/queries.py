@@ -101,7 +101,7 @@ def legs(
         """
 SELECT 
   from_stop || ' to ' || to_stop as name,
-  air_distance_km :: text as air_distance_km,
+  (air_distance_km * 1000) :: int4 as air_distance_m,
   from_lat * .985 + to_lat * .015 as lat,
   from_lon * .985 + to_lon * .015 as lon,
   round(hourly_quartile / monthly_duration, 1) as rush_intensity,
@@ -128,7 +128,7 @@ def hot_spots(
         """
     SELECT 
       from_stop || ' to ' || to_stop as name,
-      air_distance_km :: text as air_distance_km,
+      (air_distance_km * 1000) :: int4 as air_distance_m,
       from_lat * .985 + to_lat * .015 as lat,
       from_lon * .985 + to_lon * .015 as lon,
       round(hourly_quartile / monthly_duration, 1) as rush_intensity,

@@ -167,7 +167,6 @@ dependencies = [
     { name = "dash" },
     { name = "db-dtypes" },
     { name = "duckdb" },
-    { name = "flask-orjson" },
     { name = "gunicorn" },
     { name = "orjson" },
     { name = "pandas" },
@@ -194,7 +193,6 @@ requires-dist = [
     { name = "dash", specifier = ">=2.18.2" },
     { name = "db-dtypes", specifier = ">=1.4.1" },
     { name = "duckdb", specifier = ">=1.2.2" },
-    { name = "flask-orjson", specifier = ">=2.0.0" },
     { name = "google-cloud-bigquery", marker = "extra == 'scripts'", specifier = ">=3.29.0" },
     { name = "google-cloud-bigquery-storage", marker = "extra == 'scripts'", specifier = ">=2.28.0" },
     { name = "gunicorn", specifier = ">=23.0.0" },
@@ -536,19 +534,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/41/e1/d104c83026f8d35dfd2c261df7d64738341067526406b40190bc063e829a/flask-3.0.3.tar.gz", hash = "sha256:ceb27b0af3823ea2737928a4d99d125a06175b8512c445cbd9a9ce200ef76842", size = 676315, upload-time = "2024-04-07T19:26:11.035Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/61/80/ffe1da13ad9300f87c93af113edd0638c75138c42a0994becfacac078c06/flask-3.0.3-py3-none-any.whl", hash = "sha256:34e815dfaa43340d1d15a5c3a02b8476004037eb4840b34910c6e21679d288f3", size = 101735, upload-time = "2024-04-07T19:26:08.569Z" },
-]
-
-[[package]]
-name = "flask-orjson"
-version = "2.0.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "flask" },
-    { name = "orjson" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/a3/49/575796f6ddca171d82dbb12762e33166c8b8f8616c946f0a6dfbb9bc3cd6/flask_orjson-2.0.0.tar.gz", hash = "sha256:6df6631437f9bc52cf9821735f896efa5583b5f80712f7d29d9ef69a79986a9c", size = 2974, upload-time = "2024-01-15T00:03:22.236Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/f3/ca/53e14be018a2284acf799830e8cd8e0b263c0fd3dff1ad7b35f8417e7067/flask_orjson-2.0.0-py3-none-any.whl", hash = "sha256:5d15f2ba94b8d6c02aee88fc156045016e83db9eda2c30545fabd640aebaec9d", size = 3622, upload-time = "2024-01-15T00:03:17.511Z" },
 ]
 
 [[package]]
