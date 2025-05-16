@@ -3,7 +3,9 @@ import sys
 from functools import cache
 from datetime import date, datetime, timedelta
 
+import orjson
 import pandas as pd
+from pandas.api.types import is_numeric_dtype
 from flask import g, Response, request, jsonify
 from flask.blueprints import Blueprint
 
@@ -20,15 +22,22 @@ def set_headers(response: Response) -> Response:
     response.headers["Expires"] = (datetime.now() + timedelta(seconds=3600)).strftime(
         "%a, %d %b %Y %H:%M:%S GMT"
     )
-    response.headers["Vary"] = "line_ref,data_source"
+    response.headers.add(
+        "Vary", "line_ref"
+    )
+    response.headers.add(
+        "Vary", "data_source"
+    )
     return response
 
 
 def to_json(df: pd.DataFrame) -> Response:
-    return jsonify(
-        df.to_dict(orient="list")
+    resp = orjson.dumps({
+            column: df[column].to_numpy() if is_numeric_dtype(df[column]) else df[column].tolist()
+            for column in df.columns
+        }, option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NAIVE_UTC
     )
-    #return Response(df.to_json(orient="values"), content_type="application/json")
+    return Response(resp, content_type="application/json")
 
 
 @app.route("/hot-spots/<int:year>/<int:month>/<int:hour>")

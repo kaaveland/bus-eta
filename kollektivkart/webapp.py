@@ -5,7 +5,6 @@ import json
 import flask
 import dash
 import duckdb
-from flask_orjson import OrjsonProvider
 from flask import g, send_file, request, Response
 from dash import html, dcc, Output, Input
 import plotly.express as px
@@ -21,8 +20,6 @@ from . import api
 db = duckdb.connect()
 initdb.create_tables(db, os.environ.get("PARQUET_LOCATION", "data"))
 server = flask.Flask(__name__)
-json_provider = OrjsonProvider(server)
-server.json = json_provider
 server.register_blueprint(api.app, url_prefix="/api")
 
 
