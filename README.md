@@ -73,7 +73,6 @@ It is available under the [NLOD](https://data.norge.no/nlod/no/1.0) license.
 
 ## What's here
 
-
 ### Notebooks
 
 [EnturRealtimeEDA.ipynb](./EnturRealtimeEDA.ipynb) is an analysis I did on the real time data set to get familiar with 
@@ -110,6 +109,13 @@ AWS_ACCESS_KEY_ID=YOUR_OWN_AWS_ACCESS_KEY_ID
 AWS_SECRET_ACCESS_KEY=YOUR_OWN_AWS_SECRET_ACCESS_KEY
 PARQUET_LOCATION=s3://kaaveland-bus-eta-data
 ```
+### API
+
+In [api.py](./kollektivkart/api.py) there's an API that is mounted to `/api` on the dash app.
+
+### Frontend
+
+The kollektivkart python package has a plotly dash app in it. There's also an SPA frontend under [frontend](./frontend) that I'm writing to practice typescript and react a little bit.
 
 ### Deployment
 
@@ -143,4 +149,4 @@ here are some things that _should_ be done:
 - Fix structural issues in the project, separate the scripts, notebooks and the webapp into different packages.
 - Add automated tests.
 - Set up a nightly job to fetch new data and update the app. This also requires introducing partitioning by date
-  in order to avoid aggregating through all the old data again.
+   to avoid aggregating through all the old data again. ✅

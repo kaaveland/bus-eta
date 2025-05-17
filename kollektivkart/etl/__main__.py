@@ -3,10 +3,10 @@ Run kollektivkart ETL jobs
 """
 
 import logging
-import psutil
-from datetime import date
+from datetime import date, timedelta
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 
+import psutil
 import duckdb
 from google.cloud.bigquery import Client
 
@@ -59,7 +59,7 @@ def main():
     logging.info("Allow resource usage: cpu=%s ram=%sGB", opts.max_cpus, opts.memory_limit_gb)
     if not opts.skip_bq:
         client = Client()
-        sync.run_job(client, db, root, from_date=date(2024, 1, 1), to_date=date.today())
+        sync.run_job(client, db, root, from_date=date(2024, 1, 1), to_date=date.today() - timedelta(days=1))
     if opts.invalidate:
         logging.info("Invalidate downstream of BQ")
     legs.run_job(db, root, opts.invalidate)
