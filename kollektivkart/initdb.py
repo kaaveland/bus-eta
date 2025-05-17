@@ -5,11 +5,11 @@ from duckdb.duckdb import DuckDBPyConnection
 def create_tables(db: DuckDBPyConnection, parquet_location: str):
     try:
         db.execute(
-            f"create table leg_stats as from read_parquet('{parquet_location}/leg_stats.parquet/*/*', hive_partitioning=true)"
+            f"create table leg_stats as from read_parquet('{parquet_location}/leg_stats.parquet/*/*', hive_partitioning=true) select * order by month, hour, dataSource"
         )
     except duckdb.duckdb.IOException:
         db.execute(
-            f"create table leg_stats as from read_parquet('{parquet_location}/leg_stats.parquet')"
+            f"create table leg_stats as from read_parquet('{parquet_location}/leg_stats.parquet') select * order by month, hour, dataSource"
         )
 
     db.execute(f"""
