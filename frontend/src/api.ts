@@ -95,5 +95,6 @@ export async function hotspots(year: number, month: number, hour: number): Promi
 }
 
 export async function leg_stats(year: number, month: number, hour: number, dataSource: string, lineRef?: string): Promise<LegStats> {
-  return await fetchJson(`hot-spots/${year}/${month}/${hour}/${dataSource}?line_ref=${lineRef ?? ""}`)
+  const qparam = !lineRef ? "" : `?line_ref=${lineRef}`;
+  return await fetchJson(`leg-stats/${year}/${month}/${hour}/${dataSource}${qparam}`);
 }

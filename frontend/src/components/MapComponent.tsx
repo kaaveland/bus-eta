@@ -9,6 +9,7 @@ export interface MapView {
 }
 
 interface MapProps {
+  name: string,
   partition: Partition,
   showHour: Hour,
   dataSource?: string
@@ -19,7 +20,8 @@ interface MapProps {
 }
 
 
-export const MapComponent: React.FC<MapProps> = ({partition, showHour, dataSource, lineRef, data, view, onRelayout}) => {
+export const MapComponent: React.FC<MapProps> = (props) => {
+  const {name, partition, showHour, dataSource, lineRef, data, view, onRelayout} = props;
   const {year, month} = partition;
   const {hour} = showHour;
 
@@ -64,6 +66,7 @@ export const MapComponent: React.FC<MapProps> = ({partition, showHour, dataSourc
     onRelayout(updated);
   };
 
+  // @ts-ignore
   return (mounted &&
       <Plot
           style={{width: "100%"}}
@@ -76,9 +79,8 @@ export const MapComponent: React.FC<MapProps> = ({partition, showHour, dataSourc
               mode: 'markers',
               marker: {
                 color: data.rush_intensity,
-                // @ts-expect-error the dependency we use for type-checking is wrongly typed (-:
-                size: data.hourly_count,
-                sizemode: "area",
+                size: 6,
+                // @ts-expect-error this is actually available despite the typing
                 colorscale: "Cividis",
                 reversescale: true,
                 showscale: true,
@@ -107,7 +109,7 @@ export const MapComponent: React.FC<MapProps> = ({partition, showHour, dataSourc
             autosize: true,
             height: 800,
             title: {
-              text: `Transport Data for ${year}-${month.toString().padStart(2, '0')} between ${hour}:00 and ${hour + 1}:00${dataSource ? ` | Source: ${dataSource}` : ''}${lineRef ? ` | Line: ${lineRef}` : ''}`,
+              text: `${name} for ${year}-${month.toString().padStart(2, '0')} between ${hour}:00 and ${hour + 1}:00${dataSource ? ` | Source: ${dataSource}` : ''}${lineRef ? ` | Line: ${lineRef}` : ''}`,
             },
             // @ts-expect-error the dependency we use for type-checking is wrongly typed (-:
             map: {

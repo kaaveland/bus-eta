@@ -56,13 +56,13 @@ We also allow caching, since data only changes nightly.
 
 - Implement the hotspot map ✅
 - Make the gnarly tooltip ✅
-- Make the tooltip less gnarly
+- Make the tooltip less gnarly (it's complicated to make _and_ complicated to read)
 - Deployment! Should use bunny.net and [thumper](https://kaveland.no/thumper/) for this.
   + We probably want a super aggressive cache-policy for the index.html document, but let the index.js (the app) live essentially forever. I wonder how we can do that? 🧐
 - Inject the URL for the API from the build so we can run both backend and frontend locally while developing 🧐  
 - Put the year/month in the URL so people can link! Maybe also the map center and zoom? 🧐
 - Navigation! It would be good to let people click links to other views, and put the active view in the URL.
-- View data for one data source
+- View data for one data source ✅
 - View data for one data source, line ref pair
 - Styling! Clearly separate navigation and controls. Layout and padding. Air!💨 Make it 🎶responsive🎶
 - Some sort of combobox input with completion for lineRef and data source?

@@ -1,5 +1,6 @@
 import React from "react";
 import type {Hour, Partition} from "../api.ts";
+import {titleFor, type View} from "../App.tsx";
 
 export interface PartitionSelectorProps {
   partitions: Partition[]
@@ -15,7 +16,7 @@ export interface HourSelectorProps {
 export const PartitionSelector: React.FC<PartitionSelectorProps> = ({partitions, selected, handleSelect}) => {
   const selectedIndex = partitions.findIndex(p => p.year === selected.year && p.month === selected.month);
   return <label>
-    Choose month
+    Month
     <select value={selectedIndex} onChange={(e) => handleSelect(partitions[parseInt(e.target.value)])}>
       {partitions.map((p, i) => (
         <option key={i} value={i}>{`${p.year}-${p.month}`}</option>
@@ -26,12 +27,34 @@ export const PartitionSelector: React.FC<PartitionSelectorProps> = ({partitions,
 
 export const HourSelector: React.FC<HourSelectorProps> = ({selected, handleSelect}) => {
   return <label>
-    Choose hour
+    Hour
     <select value={selected.hour} onChange={(e) => handleSelect({hour: parseInt(e.target.value)})}>
       {Array.from({length: 24}, (_, i) => (
         <option key={i} value={i}>
-        {`${i}:00-${(i + 1) % 24}:00`}
+          {`${i}:00-${(i + 1) % 24}:00`}
         </option>
+      ))}
+    </select>
+  </label>
+};
+
+export interface ViewSelectorProps {
+  views: View[]
+  selected: View
+  handleSelect: React.Dispatch<React.SetStateAction<View>>
+}
+
+export const ViewSelector: React.FC<ViewSelectorProps> = (props: ViewSelectorProps) => {
+  // This can't possibly be necessary?
+  const selectedIndex = props.views.findIndex(v => v === props.selected ||
+    (typeof v !== "string" && typeof props.selected !== "string" && v.id === props.selected.id));
+  return <label>
+    Datasource
+    <select
+      value={selectedIndex}
+      onChange={(e) => props.handleSelect(props.views[parseInt(e.target.value)])}>
+      {props.views.map((v, i) => (
+        <option key={i} value={i}>{titleFor(v)}</option>
       ))}
     </select>
   </label>
