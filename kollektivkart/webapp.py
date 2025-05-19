@@ -228,7 +228,7 @@ def worst_rush_intensity(data_source: str, month: int):
 @server.route("/ready")
 def readycheck():
     latest_data = date.fromisoformat(api.get_stats()["date_range"]["end"])
-    stale = latest_data < date.today() - timedelta(days=2)
+    stale = latest_data < date.today() - timedelta(days=3)
     response = dict(status="up", data_date=latest_data.isoformat(), stale=stale)
     return Response(
         json.dumps(response),
