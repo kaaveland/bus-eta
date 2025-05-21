@@ -121,7 +121,7 @@ def sync_arrivals(
     }
     available = available_daily_partitions(db, dest)
     need = wanted - available
-    for partition in need:
+    for partition in sorted(need):
         logging.info("Syncing %s from arrivals", partition.isoformat())
         batch = fetch_arrivals_partition(client, partition)
         db.register("batch", batch)

@@ -52,8 +52,8 @@ select
   aimedDepartureTime,
   departureTime,
   dataSource,
-  dataSourceName
-where abs(extract (epoch from arrivalTime - aimedArrivalTime)) < 3600
+  dataSourceName,
+where abs(extract (epoch from coalesce(arrivalTime - aimedArrivalTime, departureTime - aimedDepartureTime))) < 7200
 window journey as (
   partition by (serviceJourneyId, operatingDate) order by sequenceNr
 ), stops as (
@@ -66,15 +66,6 @@ qualify
     or bool_or(journeyCancellation) over journey
     or bool_or(stopCancellation) over journey
   )
-  and abs(extract(epoch from aimedArrivalTime - coalesce(
-    lag(aimedArrivalTime) over journey,
-    lag(aimedDepartureTime) over journey
-  ))) < 3600
-  and abs(extract(epoch from arrivalTime - coalesce(
-    lag(arrivalTime) over journey,
-    lag(departureTime) over journey
-  ))
-)
 """
 
 
@@ -101,14 +92,14 @@ select
   (extract(epoch from arrivalTime - coalesce(
     lag(arrivalTime) over w,
     lag(departureTime) over w
-  ))) :: int2 as actual_duration,
+  ))) :: int4 as actual_duration,
 
   (extract(epoch from aimedArrivalTime - coalesce(
     lag(aimedArrivalTime) over w,
     lag(aimedDepartureTime) over w
-  ))) :: int2 as planned_duration,
+  ))) :: int4 as planned_duration,
 
-  (extract (epoch from arrivalTime - aimedArrivalTime)) :: int2 as delay,
+  (extract (epoch from arrivalTime - aimedArrivalTime)) :: int4 as delay,
   actual_duration - planned_duration as deviation,
 
   stop as to_stop,
@@ -118,7 +109,7 @@ select
   lag(lat) over w as from_lat,
   lag(lon) over w as from_lon,
   st_distance_spheroid(st_point(from_lat, from_lon), st_point(to_lat, to_lon)) :: int as air_distance_meters
-where abs(delay) < 3600  
+where abs(delay) < 7200
 window w as (
   partition by (operatingDate, serviceJourneyId) order by sequenceNr asc
 )
@@ -126,7 +117,8 @@ qualify
   from_stop is not null 
   and start_time is not null 
   and planned_duration is not null 
-  and abs(deviation) < 1800
+  and planned_duration between 0 and 7200
+  and abs(deviation) < 7200
   and air_distance_meters > 0
   and actual_duration > 1
   and (air_distance_meters / 1000) / (actual_duration / 3600) < 250
@@ -152,7 +144,7 @@ def run_job(db: DuckDBPyConnection, root: str, invalidate: bool):
     need = source_partitions - destination_partitions
     create_stopdata(db, root)
     logging.info("Need to calculate %s partitions", len(need))
-    for partition in need:
+    for partition in sorted(need):
         logging.info("Calculate legs for partition %s", partition.isoformat())
         create_clean_arrivals(db, root, partition)
         create_legs(db, root)
