@@ -77,9 +77,10 @@ with hourly as (
     quantile_disc(
       actual_duration, .75
     ) as hourly_quartile,
-    median(actual_duration) :: int4 as hourly_duration,
-    median(delay) :: int4 as hourly_delay,
-    median(deviation) :: int4 as hourly_deviation,
+    median(actual_duration) :: int2 as hourly_duration,
+    median(delay) :: int2 as hourly_delay,
+    median(deviation) :: int2 as hourly_deviation,
+    mean(actual_duration) :: int2 as mean_hourly_duration,
     count(*) as hourly_count
   where
     extract(weekday from start_time) != 0 and extract(weekday from start_time) != 6
@@ -92,14 +93,15 @@ with hourly as (
     from_stop, 
     to_stop,
     date_trunc('month', operatingDate) as month,
-    median(actual_duration) :: int4 as monthly_duration,
+    median(actual_duration) :: int2 as monthly_duration,
       quantile_disc(
       actual_duration, .75
     ) as monthly_quartile,
-    median(delay) :: int4 as monthly_delay,
-    median(deviation) :: int4 as monthly_deviation,
+    median(delay) :: int2 as monthly_delay,
+    median(deviation) :: int2 as monthly_deviation,
+    mean(actual_duration) :: int2 as mean_monthly_duration,
     count(*) as monthly_count,
-    round(any_value(air_distance_meters / 1000), 1) as air_distance_km,
+    round(any_value(air_distance_meters / 1000), 1) :: int2 as air_distance_km,
     any_value(from_lat) as from_lat,
     any_value(from_lon) as from_lon,
     any_value(to_lat) as to_lat,

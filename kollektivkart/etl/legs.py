@@ -52,7 +52,8 @@ select
   aimedDepartureTime,
   departureTime,
   dataSource,
-  dataSourceName,
+  dataSourceName
+where abs(extract (epoch from arrivalTime - aimedArrivalTime)) < 3600
 window journey as (
   partition by (serviceJourneyId, operatingDate) order by sequenceNr
 ), stops as (
@@ -60,10 +61,19 @@ window journey as (
 )
 qualify 
   row_number() over stops = 1 AND NOT (
-  bool_or(extraCall) over journey
-  or bool_or(estimated) over journey
-  or bool_or(journeyCancellation) over journey
-  or bool_or(stopCancellation) over journey
+    bool_or(extraCall) over journey
+    or bool_or(estimated) over journey
+    or bool_or(journeyCancellation) over journey
+    or bool_or(stopCancellation) over journey
+  )
+  and abs(extract(epoch from aimedArrivalTime - coalesce(
+    lag(aimedArrivalTime) over journey,
+    lag(aimedDepartureTime) over journey
+  ))) < 3600
+  and abs(extract(epoch from arrivalTime - coalesce(
+    lag(arrivalTime) over journey,
+    lag(departureTime) over journey
+  ))
 )
 """
 
@@ -91,14 +101,14 @@ select
   (extract(epoch from arrivalTime - coalesce(
     lag(arrivalTime) over w,
     lag(departureTime) over w
-  ))) :: int as actual_duration,
+  ))) :: int2 as actual_duration,
 
   (extract(epoch from aimedArrivalTime - coalesce(
     lag(aimedArrivalTime) over w,
     lag(aimedDepartureTime) over w
-  ))) :: int as planned_duration,
+  ))) :: int2 as planned_duration,
 
-  (extract (epoch from arrivalTime - aimedArrivalTime)) :: int as delay,
+  (extract (epoch from arrivalTime - aimedArrivalTime)) :: int2 as delay,
   actual_duration - planned_duration as deviation,
 
   stop as to_stop,
@@ -108,7 +118,7 @@ select
   lag(lat) over w as from_lat,
   lag(lon) over w as from_lon,
   st_distance_spheroid(st_point(from_lat, from_lon), st_point(to_lat, to_lon)) :: int as air_distance_meters
-where abs(delay) < 3600
+where abs(delay) < 3600  
 window w as (
   partition by (operatingDate, serviceJourneyId) order by sequenceNr asc
 )
