@@ -53,7 +53,6 @@ select
   departureTime,
   dataSource,
   dataSourceName,
-where abs(extract (epoch from coalesce(arrivalTime - aimedArrivalTime, departureTime - aimedDepartureTime))) < 7200
 window journey as (
   partition by (serviceJourneyId, operatingDate) order by sequenceNr
 ), stops as (
