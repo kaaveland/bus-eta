@@ -217,7 +217,7 @@ def worst_rush_intensity(data_source: str, month: int):
         height=800,
         color="hourly_count",
         hover_data=[
-            "air_distance_m",
+            "air_distance_meters",
             "hourly_duration",
             "hourly_quartile",
             "monthly_duration",

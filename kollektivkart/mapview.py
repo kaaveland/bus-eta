@@ -9,7 +9,7 @@ from . import queries
 def hovertooltip(hour: int) -> (list[pd.Series], str):
     hover_data = [
         "name",
-        "air_distance_m",
+        "air_distance_meters",
         "rush_intensity",
         "hourly_quartile",
         "hourly_duration",
@@ -29,7 +29,7 @@ def hovertooltip(hour: int) -> (list[pd.Series], str):
 
     tooltip = f"""
 <b>{col("name")}</b> {this_hour}<br>
-Air distance {col("air_distance_m")}m<br><br>
+Air distance {col("air_distance_meters")}m<br><br>
 Rush intensity {col("rush_intensity", fmt=':.1f')}, 25% of transports take longer than {col("hourly_quartile")}s {this_hour}<br>
 {col("monthly_count")} vehicles recorded for this month and {col("hourly_count")} {this_hour}<br>
 Monthly median travel time {col("monthly_duration")}s , {col("hourly_duration")}s {this_hour}<br>

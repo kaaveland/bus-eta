@@ -101,7 +101,7 @@ with hourly as (
     median(deviation) :: int2 as monthly_deviation,
     mean(actual_duration) :: int2 as mean_monthly_duration,
     count(*) as monthly_count,
-    round(any_value(air_distance_meters / 1000), 1) :: int2 as air_distance_km,
+    any_value(air_distance_meters) as air_distance_meters,
     any_value(from_lat) as from_lat,
     any_value(from_lon) as from_lon,
     any_value(to_lat) as to_lat,
@@ -112,7 +112,7 @@ with hourly as (
   group by month, dataSource, from_stop, to_stop
 )
 from hourly join monthly using(dataSource, from_stop, to_stop, month)
-where hourly_count > 20 and air_distance_km > 0.001 and month = $month
+where hourly_count > 20 and air_distance_meters > 50 and month = $month
 """
 
 
