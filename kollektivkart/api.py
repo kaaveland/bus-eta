@@ -22,20 +22,20 @@ def set_headers(response: Response) -> Response:
     response.headers["Expires"] = (datetime.now() + timedelta(seconds=3600)).strftime(
         "%a, %d %b %Y %H:%M:%S GMT"
     )
-    response.headers.add(
-        "Vary", "line_ref"
-    )
-    response.headers.add(
-        "Vary", "data_source"
-    )
+    response.headers.add("Vary", "line_ref")
+    response.headers.add("Vary", "data_source")
     return response
 
 
 def to_json(df: pd.DataFrame) -> Response:
-    resp = orjson.dumps({
-            column: df[column].to_numpy() if is_numeric_dtype(df[column]) else df[column].tolist()
+    resp = orjson.dumps(
+        {
+            column: df[column].to_numpy()
+            if is_numeric_dtype(df[column])
+            else df[column].tolist()
             for column in df.columns
-        }, option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NAIVE_UTC
+        },
+        option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NAIVE_UTC,
     )
     return Response(resp, content_type="application/json")
 
@@ -52,6 +52,18 @@ def leg_stats(year: int, month: int, hour: int, datasource: str) -> Response:
     partition = date(year, month, 1)
     line_ref = request.args.get("line_ref")
     data = queries.legs(g.db, partition, hour, datasource, line_ref)
+    return to_json(data)
+
+
+@app.route(
+    "/comparison/<int:cur_year>/<int:cur_month>/<int:prev_year>/<int:prev_month>/<int:hour>"
+)
+def comparison(
+    cur_year: int, cur_month: int, prev_year: int, prev_month: int, hour: int
+) -> Response:
+    cur = date(cur_year, cur_month, 1)
+    prev = date(prev_year, prev_month, 1)
+    data = queries.comparisons(g.db, cur, prev, hour)
     return to_json(data)
 
 

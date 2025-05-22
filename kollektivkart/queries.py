@@ -239,3 +239,55 @@ def duckdb_memory(db: DuckDBPyConnection) -> int:
     return db.sql("select sum(memory_usage_bytes) from duckdb_memory();").fetchall()[0][
         0
     ]
+
+
+_comparisons = """
+with prev as (
+  from leg_stats where hour = $hour and month = $prev_month
+), cur as (
+  from leg_stats where hour = $hour and month = $cur_month
+)
+from prev join cur using(dataSource, from_stop, to_stop)
+select
+  from_stop || ' to ' || to_stop as name,
+  cur.mean_hourly_duration - prev.mean_hourly_duration as net_change_seconds,
+  (100 * (net_change_seconds :: int4) / 
+    (cur.mean_hourly_duration + prev.mean_hourly_duration)) :: int4 as net_change_proportion,
+  from_stop,
+  to_stop,        
+  cur.air_distance_meters,
+  cur.from_lat,
+  cur.from_lon,
+  cur.to_lat,
+  cur.to_lon,  
+  cur.from_lat * .985 + cur.to_lat * .015 as lat,
+  cur.from_lon * .985 + cur.to_lon * .015 as lon,
+  cur.hourly_quartile as cur_hourly_quartile,
+  prev.hourly_quartile as prev_hourly_quartile,
+  cur.hourly_duration as cur_hourly_duration,
+  prev.hourly_duration as prev_hourly_duration,
+  cur.hourly_delay as cur_hourly_delay,
+  prev.hourly_delay as prev_hourly_delay,
+  cur.hourly_deviation as cur_hourly_deviation,
+  cur.mean_hourly_duration as cur_mean_hourly_duration,
+  cur.monthly_count as cur_month_count,
+  prev.monthly_count as prev_monthly_count,
+  cur.hourly_count,
+  prev.hourly_count as prev_hourly_count,
+  dataSource as data_source
+order by abs(net_change_proportion) desc
+limit $limit;
+"""
+
+
+def comparisons(
+    db: DuckDBPyConnection,
+    prev_month: date,
+    cur_month: date,
+    hour: int,
+    limit: int = 1000,
+) -> pd.DataFrame:
+    return db.sql(
+        _comparisons,
+        params=dict(prev_month=prev_month, cur_month=cur_month, hour=hour, limit=limit),
+    ).df()
