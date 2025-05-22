@@ -269,12 +269,15 @@ select
   cur.hourly_delay as cur_hourly_delay,
   prev.hourly_delay as prev_hourly_delay,
   cur.hourly_deviation as cur_hourly_deviation,
+  prev.hourly_deviation as prev_hourly_deviation,
   cur.mean_hourly_duration as cur_mean_hourly_duration,
+  prev.mean_hourly_duration as prev_mean_hourly_duration,
   cur.monthly_count as cur_month_count,
   prev.monthly_count as prev_monthly_count,
-  cur.hourly_count,
+  cur.hourly_count as cur_hourly_count,
   prev.hourly_count as prev_hourly_count,
   dataSource as data_source
+where cur.month != prev.month    
 order by abs(net_change_proportion) desc
 limit $limit;
 """

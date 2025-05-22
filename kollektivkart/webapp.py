@@ -15,7 +15,9 @@ from . import initdb
 from . import queries
 from . import global_inputs
 from . import mapview
+from . import comparisonview
 from . import api
+from .global_inputs import render_month_slider
 
 db = duckdb.connect()
 initdb.create_tables(db, os.environ.get("PARQUET_LOCATION", "data"))
@@ -50,6 +52,10 @@ state = dcc.Store(id="state", data=dict(zoom=8, center=dict(lat=59.91, lon=10.79
 hot_spots_state = dcc.Store(
     id="hot-spot-state", data=dict(zoom=5, center=dict(lat=59.91, lon=10.79))
 )
+comparison_state = dcc.Store(
+    id="comparison-state", data=dict(zoom=5, center=dict(lat=59.91, lon=10.79))
+)
+
 
 rush_intensity = html.P(
     "Rush intensity is a measure of how much slower traffic flows between 2 stops during one particular "
@@ -65,10 +71,20 @@ app.layout = html.Div(
         global_inputs.render_global_inputs(db),
         state,
         hot_spots_state,
+        comparison_state,
         dcc.Tabs(
             id="tabs",
-            value="hot-spots",
+            value="delta",
             children=[
+                dcc.Tab(
+                    label="Delta",
+                    value="delta",
+                    children=[
+                        html.H2("Compare travel time between months in map"),
+                        render_month_slider(db, "prev-month", default_from_end=2),
+                        dcc.Graph(id="comparison-map"),
+                    ],
+                ),
                 dcc.Tab(
                     label="Hot Spots",
                     value="hot-spots",
@@ -133,6 +149,7 @@ def set_lines_for_data_source(data_source: str):
 
 mapview.main_map_view(app, state)
 mapview.hot_spots(app, hot_spots_state)
+comparisonview.comparisonview(app, comparison_state)
 
 
 @app.callback(
