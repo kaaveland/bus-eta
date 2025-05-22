@@ -101,7 +101,13 @@ def legs(
         """
 SELECT 
   from_stop || ' to ' || to_stop as name,
+  from_stop,
+  to_stop,
   air_distance_meters,
+  from_lat,
+  from_lon,
+  to_lat,
+  to_lon,    
   from_lat * .985 + to_lat * .015 as lat,
   from_lon * .985 + to_lon * .015 as lon,
   round(hourly_quartile / monthly_duration, 1) as rush_intensity,
@@ -112,8 +118,11 @@ SELECT
   hourly_delay as hourly_delay,
   monthly_deviation as monthly_deviation,
   hourly_deviation as hourly_deviation,
+  mean_hourly_duration,
+  mean_monthly_duration,        
   monthly_count,
-  hourly_count  
+  hourly_count,
+  dataSource as data_source,
 FROM leg_stats JOIN stop_line USING (dataSource, from_stop, to_stop)
 WHERE month = $month and hour = $hour and dataSource = $data_source AND ($line_ref is null OR $line_ref = stop_line.lineRef)
     """,
@@ -128,7 +137,13 @@ def hot_spots(
         """
     SELECT 
       from_stop || ' to ' || to_stop as name,
+      from_stop,
+      to_stop,        
       air_distance_meters,
+      from_lat,
+      from_lon,
+      to_lat,
+      to_lon,  
       from_lat * .985 + to_lat * .015 as lat,
       from_lon * .985 + to_lon * .015 as lon,
       round(hourly_quartile / monthly_duration, 1) as rush_intensity,
@@ -139,8 +154,11 @@ def hot_spots(
       hourly_delay as hourly_delay,
       monthly_deviation as monthly_deviation,
       hourly_deviation as hourly_deviation,
+      mean_hourly_duration,
+      mean_monthly_duration,        
       monthly_count,
-      hourly_count  
+      hourly_count,
+      dataSource as data_source
     FROM leg_stats
     WHERE month = $month and hour = $hour
     ORDER BY rush_intensity DESC

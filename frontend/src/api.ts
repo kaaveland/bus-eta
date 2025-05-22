@@ -75,7 +75,7 @@ export async function loadBootstrap(): Promise<Bootstrap> {
 
 export type LegStats = {
   name: string[],
-  air_distance_m: number[],
+  air_distance_meters: number[],
   lat: number[],
   lon: number[],
   rush_intensity: number[],

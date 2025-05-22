@@ -90,7 +90,7 @@ export const MapComponent: React.FC<MapProps> = (props) => {
               },
               customdata: data.name.map((_, i) => [
                 data.name[i],
-                data.air_distance_m[i],
+                data.air_distance_meters[i],
                 data.rush_intensity[i],
                 data.hourly_quartile[i],
                 data.hourly_duration[i],

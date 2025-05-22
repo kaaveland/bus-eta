@@ -20,6 +20,8 @@ def hovertooltip(hour: int) -> (list[pd.Series], str):
         "monthly_deviation",
         "hourly_count",
         "monthly_count",
+        "mean_hourly_duration",
+        "mean_monthly_duration",
     ]
     by_ix = {col: i for i, col in enumerate(hover_data)}
     this_hour = f"between {hour}:00 and {hour + 1 }:00"
@@ -29,12 +31,14 @@ def hovertooltip(hour: int) -> (list[pd.Series], str):
 
     tooltip = f"""
 <b>{col("name")}</b> {this_hour}<br>
-Air distance {col("air_distance_meters")}m<br><br>
-Rush intensity {col("rush_intensity", fmt=':.1f')}, 25% of transports take longer than {col("hourly_quartile")}s {this_hour}<br>
-{col("monthly_count")} vehicles recorded for this month and {col("hourly_count")} {this_hour}<br>
-Monthly median travel time {col("monthly_duration")}s , {col("hourly_duration")}s {this_hour}<br>
-Monthly median delay is {col("monthly_delay")}s, {col("hourly_delay")}s {this_hour}<br>
-Monthly median deviation is {col("monthly_deviation")}s, {col("hourly_deviation")}s {this_hour}
+Air distance {col("air_distance_meters")}m<br>
+Average {col("mean_hourly_duration")}s travel time now, normally {col("mean_monthly_duration")}s<br><br>
+Rush intensity {col("rush_intensity", fmt=':.1f')}<br>
+25% of transports take longer than {col("hourly_quartile")}s now<br>
+{col("monthly_count")} vehicles recorded, and {col("hourly_count")} {this_hour}<br>
+Typical travel time {col("monthly_duration")}s , {col("hourly_duration")}s now<br>
+Typical delay is {col("monthly_delay")}s, {col("hourly_delay")}s now<br>
+Typical deviation is {col("monthly_deviation")}s, {col("hourly_deviation")}s now
 """
 
     return hover_data, tooltip
@@ -54,7 +58,6 @@ def draw_map(
         title=title,
         lat="lat",
         lon="lon",
-        size="hourly_count",
         hover_name="name",
         hover_data=hover_data,
         center=center,
