@@ -32,7 +32,7 @@ def hovertooltip(hour: int) -> (list[pd.Series], str):
     tooltip = f"""
 <b>{col("name")}</b> {this_hour}<br>
 Air distance {col("air_distance_meters")}m<br>
-Average {col("mean_hourly_duration")}s travel time now, normally {col("mean_monthly_duration")}s<br><br>
+Average {col("mean_hourly_duration")}s travel time now<br><br>
 Rush intensity {col("rush_intensity", fmt=':.1f')}<br>
 25% of transports take longer than {col("hourly_quartile")}s now<br>
 {col("monthly_count")} vehicles recorded, and {col("hourly_count")} {this_hour}<br>
