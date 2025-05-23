@@ -79,12 +79,12 @@ export const MapComponent: React.FC<MapProps> = (props) => {
               mode: 'markers',
               marker: {
                 color: data.rush_intensity,
-                size: 6,
+                size: 12,
                 // @ts-expect-error this is actually available despite the typing
                 colorscale: "Cividis",
-                reversescale: true,
+                reversescale: false,
                 showscale: true,
-                cmax: 5,
+                cmax: 3,
                 cmin: 1,
                 name: ""
               },

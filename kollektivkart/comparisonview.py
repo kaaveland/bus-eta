@@ -30,12 +30,12 @@ _hoverdata_columns = [
 ]
 
 
-def hovertooltip(hour: int, prev_month: date, cur_month: date) -> (list[str], str):
+def hovertooltip(hour: int, prev_month: date, cur_month: date) -> str:
     by_ix = {col: i for i, col in enumerate(_hoverdata_columns)}
     now = f"between {hour}:00-{hour + 1}:00"
 
-    def col(c, fmt=""):
-        return f"%{{customdata[{by_ix[c]}]{fmt}}}"
+    def col(c):
+        return f"%{{customdata[{by_ix[c]}]}}"
 
     tooltip = f"""{col("data_source")} - <b>{col("name")}</b> {now}</b><br>
 Air distance {col("air_distance_meters")}m<br>
