@@ -68,11 +68,12 @@ def draw_map(
         lon="lon",
         hover_name="name",
         color="net_change_proportion",
-        color_continuous_scale="cividis_r",
+        color_continuous_scale="viridis",
         center=center,
         zoom=zoom,
         height=800,
         hover_data=_hoverdata_columns,
+        range_color=[-50, 50]
     )
     fig.update_traces(hovertemplate=hovertooltip(hour, prev_month, cur_month))
     return fig

@@ -64,7 +64,7 @@ def draw_map(
         zoom=zoom,
         height=800,
         color="rush_intensity",
-        color_continuous_scale="Cividis_r",
+        color_continuous_scale="viridis",
         range_color=[1.0, range_color_scale_stop],
     )
     fig.update_traces(hovertemplate=tooltip)
