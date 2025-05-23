@@ -6,7 +6,7 @@ from flask import g
 from . import queries
 
 
-def hovertooltip(hour: int) -> (list[pd.Series], str):
+def hovertooltip(hour: int) -> (list[str], str):
     hover_data = [
         "name",
         "air_distance_meters",

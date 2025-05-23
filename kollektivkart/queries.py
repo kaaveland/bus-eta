@@ -253,6 +253,7 @@ select
   cur.mean_hourly_duration - prev.mean_hourly_duration as net_change_seconds,
   (100 * (net_change_seconds :: int4) / 
     (cur.mean_hourly_duration + prev.mean_hourly_duration)) :: int4 as net_change_proportion,
+  ((100 * net_change_seconds :: int4) / prev.mean_hourly_duration) :: int4 as net_change_pct,
   from_stop,
   to_stop,        
   cur.air_distance_meters,
