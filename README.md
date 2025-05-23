@@ -16,7 +16,7 @@ tons and tons of usability/UX problems.
 This repository uses `uv`, you can get it from [here](https://docs.astral.sh/uv/). It will create a virtualenv in `.venv`, which
 is good to know if you want to configure an editor or IDE to find the appropriate sources.
 
-Short note on dependencies: For friendly setup, `pyproject.toml` is set up with a huge set of dependencies. If wanting 
+Short note on dependencies: For friendly setup, `pyproject.toml` is set up with a huge set of dependencies. If wanting
 to use this for anything professional, I would recommend setting up 2 or 3 projects with different sets of dependencies.
 
 Install dependencies, including jupyter (required for IDE-integration with notebooks):
@@ -32,6 +32,7 @@ uv sync --extra=scripts
 ```
 
 Install dependencies for the webapp only (also requires data files, see below):
+
 ```shell
 uv sync
 ```
@@ -55,6 +56,7 @@ uv run python -m kollektivkart.etl -h
 ```
 
 Run the webapp in development mode (requires extra steps, see Scripts and Dashboard app below):
+
 ```shell
 uv run python -m kollektivkart
 ```
@@ -63,7 +65,7 @@ uv run python -m kollektivkart
 
 MIT -- see [LICENSE.md](LICENSE.md). You can use this code for any purpose, and you do not have to attribute it to me.
 
-You also do not get to blame me if something in this repository becomes a black hole that 
+You also do not get to blame me if something in this repository becomes a black hole that
 consumes absolutely all of your RAM.
 
 ## Data license
@@ -75,7 +77,7 @@ It is available under the [NLOD](https://data.norge.no/nlod/no/1.0) license.
 
 ### Notebooks
 
-[EnturRealtimeEDA.ipynb](./EnturRealtimeEDA.ipynb) is an analysis I did on the real time data set to get familiar with 
+[EnturRealtimeEDA.ipynb](./EnturRealtimeEDA.ipynb) is an analysis I did on the real time data set to get familiar with
 it. This will consume a lot of memory with PyCharm or the IntelliJ notebook-plugin due to its size, I had to increase
 heap size to 4096m.
 
@@ -98,8 +100,8 @@ for f in {datasources,datasource_line,stop_line,leg_stats}.parquet; do
 done
 ```
 
-Run it with `uv run python -m kollektivkart` or build it with docker and run it. The dash webapp needs these files at 
-runtime to work. If running with docker, use a volume and provide the `PARQUET_LOCATION` environment location to their 
+Run it with `uv run python -m kollektivkart` or build it with docker and run it. The dash webapp needs these files at
+runtime to work. If running with docker, use a volume and provide the `PARQUET_LOCATION` environment location to their
 location. If you want to load them directly from S3, you can provide an environment file like so:
 
 ```shell
@@ -109,6 +111,7 @@ AWS_ACCESS_KEY_ID=YOUR_OWN_AWS_ACCESS_KEY_ID
 AWS_SECRET_ACCESS_KEY=YOUR_OWN_AWS_SECRET_ACCESS_KEY
 PARQUET_LOCATION=s3://kaaveland-bus-eta-data
 ```
+
 ### API
 
 In [api.py](./kollektivkart/api.py) there's an API that is mounted to `/api` on the dash app.
@@ -131,7 +134,7 @@ Note that `uv run python -m kollektivkart` is not a suitable way to run this app
 NB! This webapp puts a lot of data (> 500MB) in memory once it loads, so use `--preload` with `gunicorn`.
 This ensures a faster startup and also since this memory is only written once, it can be shared with copy-on-write
 memory between the workers. This lets you run many workers without using a lot of RAM. gunicorn usually
-recommends 1-2 workers per CPU, but since DuckDB is also threaded on the C level, 2 workers per CPU may be a 
+recommends 1-2 workers per CPU, but since DuckDB is also threaded on the C level, 2 workers per CPU may be a
 little high.
 
 ## Contributions & tickets
@@ -149,4 +152,4 @@ here are some things that _should_ be done:
 - Fix structural issues in the project, separate the scripts, notebooks and the webapp into different packages.
 - Add automated tests.
 - Set up a nightly job to fetch new data and update the app. This also requires introducing partitioning by date
-   to avoid aggregating through all the old data again. ✅
+  to avoid aggregating through all the old data again. ✅
