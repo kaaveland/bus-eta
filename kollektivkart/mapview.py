@@ -69,6 +69,7 @@ def draw_map(
     )
     fig.update_traces(hovertemplate=tooltip)
     fig.update_traces(marker=dict(size=10))
+    fig.update_layout(coloraxis_showscale=False)
     return fig
 
 
