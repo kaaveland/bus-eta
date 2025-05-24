@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: production
-      url: https://kollektivkart-fe.b-cdn.net
+      url: https://kollektivkart-ts-poc.b-cdn.net
 
     steps:
       - name: Checkout code
