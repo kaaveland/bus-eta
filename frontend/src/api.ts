@@ -1,5 +1,5 @@
 // Find definitions/routes in api.py
-const BASE_URL = "https://kollektivkart.kaveland.no/api/";
+const BASE_URL = "https://kollektivcache.b-cdn.net/api/";
 
 export type StatsDataResponse = {
   aggregated_count: number,
@@ -14,7 +14,11 @@ export type StatsDataResponse = {
 };
 
 async function fetchJson<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`);
+  const res = await fetch(`${BASE_URL}${path}`, {
+    headers: {
+      'Accept': 'application/json'
+    }
+  });
   if (!res.ok) throw new Error(`Failed to fetch ${path}`);
   // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   return res.json();
@@ -75,6 +79,9 @@ export async function loadBootstrap(): Promise<Bootstrap> {
 
 export type LegStats = {
   name: string[],
+  from_stop: string[],
+  to_stop: string[],
+  data_source: string[],
   air_distance_meters: number[],
   lat: number[],
   lon: number[],
@@ -97,4 +104,54 @@ export async function hotspots(year: number, month: number, hour: number): Promi
 export async function leg_stats(year: number, month: number, hour: number, dataSource: string, lineRef?: string): Promise<LegStats> {
   const qparam = !lineRef ? "" : `?line_ref=${lineRef}`;
   return await fetchJson(`leg-stats/${year}/${month}/${hour}/${dataSource}${qparam}`);
+}
+
+export type LegComparison = {
+  name: string[],
+  from_stop: string[],
+  to_stop: string[],
+  data_source: string[],
+  net_change_seconds: number[],
+  net_change_proportion: number[],
+  net_change_pct: number[],
+  air_distance_meters: number[],
+  from_lat: number[],
+  from_lon: number[],
+  to_lat: number[],
+  to_lon: number[],
+  lat: number[],
+  lon: number[],
+  cur_hourly_quartile: number[],
+  prev_hourly_quartile: number[],
+  cur_hourly_duration: number[],
+  prev_hourly_duration: number[],
+  cur_hourly_delay: number[],
+  prev_hourly_delay: number[],
+  cur_hourly_deviation: number[],
+  prev_hourly_deviation: number[],
+  cur_mean_hourly_duration: number[],
+  prev_mean_hourly_duration: number[],
+  cur_monthly_count: number[],
+  prev_monthly_count: number[],
+  cur_hourly_count: number[],
+  prev_hourly_count: number[]
+}
+
+export type ComparisonParameters = {
+  previous: Partition,
+  current: Partition,
+  hour: number,
+  data_source?: string,
+  line_ref?: string
+};
+
+export const comparisonStats = async ({previous, current, hour, data_source, line_ref}: ComparisonParameters) => {
+  const qparams = [
+    !line_ref ? "" : `line_ref=${line_ref}`,
+    !data_source ? "" : `data_source=${data_source}`
+  ].join("&");
+  const qstring = !qparams ? "" : `?${qparams}`;
+  return await fetchJson<LegComparison>(
+    `comparison/${current.year}/${current.month}/${previous.year}/${previous.month}/${hour}${qstring}`
+  );
 }

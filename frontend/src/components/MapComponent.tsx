@@ -16,7 +16,7 @@ interface MapProps {
   lineRef?: string
   data: LegStats,
   view: MapView,
-  onRelayout: React.Dispatch<React.SetStateAction<MapView>>
+  onRelayout: (view: MapView) => void
 }
 
 
@@ -66,9 +66,9 @@ export const MapComponent: React.FC<MapProps> = (props) => {
     onRelayout(updated);
   };
 
-  // @ts-ignore
   return (mounted &&
       <Plot
+          useResizeHandler={true}
           style={{width: "100%"}}
           data={[
             {
@@ -79,12 +79,10 @@ export const MapComponent: React.FC<MapProps> = (props) => {
               mode: 'markers',
               marker: {
                 color: data.rush_intensity,
-                size: 12,
+                size: 10,
                 // @ts-expect-error this is actually available despite the typing
-                colorscale: "Cividis",
-                reversescale: false,
-                showscale: true,
-                cmax: 3,
+                colorscale: "Viridis",
+                cmax: 5,
                 cmin: 1,
                 name: ""
               },

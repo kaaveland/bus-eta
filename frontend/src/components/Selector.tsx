@@ -1,16 +1,26 @@
 import React from "react";
-import type {Hour, Partition} from "../api.ts";
-import {titleFor, type View} from "../App.tsx";
+import type {DataSources, Hour, Partition} from "../api.ts";
+
+export interface Datasource {
+  label: string,
+  id: string
+}
+
+export const labelDatasources = (dataSources: DataSources): Datasource[] => {
+  return Object.keys(dataSources).map((key) => ({
+    id: key, label: dataSources[key] ?? key
+  }));
+}
 
 export interface PartitionSelectorProps {
   partitions: Partition[]
   selected: Partition
-  handleSelect: React.Dispatch<React.SetStateAction<Partition>>
+  handleSelect: (partition: Partition) => void
 }
 
 export interface HourSelectorProps {
   selected: Hour,
-  handleSelect: React.Dispatch<React.SetStateAction<Hour>>
+  handleSelect: (hour: Hour) => void
 }
 
 export const PartitionSelector: React.FC<PartitionSelectorProps> = ({partitions, selected, handleSelect}) => {
@@ -39,22 +49,21 @@ export const HourSelector: React.FC<HourSelectorProps> = ({selected, handleSelec
 };
 
 export interface ViewSelectorProps {
-  views: View[]
-  selected: View
-  handleSelect: React.Dispatch<React.SetStateAction<View>>
+  views: Datasource[]
+  selected: Datasource
+  handleSelect: (ds: Datasource) => void;
 }
 
 export const ViewSelector: React.FC<ViewSelectorProps> = (props: ViewSelectorProps) => {
   // This can't possibly be necessary?
-  const selectedIndex = props.views.findIndex(v => v === props.selected ||
-    (typeof v !== "string" && typeof props.selected !== "string" && v.id === props.selected.id));
+  const selectedIndex = props.views.findIndex(v => v.id === props.selected.id);
   return <label>
     Datasource
     <select
       value={selectedIndex}
       onChange={(e) => props.handleSelect(props.views[parseInt(e.target.value)])}>
       {props.views.map((v, i) => (
-        <option key={i} value={i}>{titleFor(v)}</option>
+        <option key={i} value={i}>{v.label}</option>
       ))}
     </select>
   </label>
