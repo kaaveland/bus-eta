@@ -69,7 +69,6 @@ export const MapComponent: React.FC<MapProps> = (props) => {
   return (mounted &&
       <Plot
           useResizeHandler={true}
-          style={{width: "100%"}}
           data={[
             {
               // @ts-expect-error the dependency we use for type-checking is wrongly typed (-:

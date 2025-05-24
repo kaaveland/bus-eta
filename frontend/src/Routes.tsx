@@ -12,7 +12,7 @@ export const AppRoutes = ({bootstrap} : AppRoutesProps) => {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<HotSpots partitions={bootstrap.partitions} />}/>
+        <Route path="/" element={<Comparison partitions={bootstrap.partitions} />}/>
         <Route path="/:year/:month/:hour">
           <Route path="hot-spots" element={<HotSpots partitions={bootstrap.partitions} />}/>
           <Route path="legs/" element={<LegStats partitions={bootstrap.partitions} dataSources={bootstrap.dataSources}/>}/>

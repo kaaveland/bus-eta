@@ -10,8 +10,8 @@ export default function NavBar({slot}: NavBarProps) {
 
   return (
     <nav>
-      <Link className="navigation" to={`${basePath}/hot-spots`}>Hot Spots</Link>
       <Link className="navigation" to={`${basePath}/comparison`}>Comparison</Link>
+      <Link className="navigation" to={`${basePath}/hot-spots`}>Hot Spots</Link>
       <Link className="navigation" to={`${basePath}/legs`}>Leg Stats</Link>
       <Link className="navigation" to="https://kollektivkart.arktekk.no">Legacy</Link>
     </nav>
