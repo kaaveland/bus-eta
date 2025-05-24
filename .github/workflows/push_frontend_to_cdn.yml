@@ -2,6 +2,9 @@ name: Push frontend to CDN
 
 on:
   push:
+    paths:
+      - frontend/**
+      - mise.toml
     branches:
       - main
   workflow_dispatch:

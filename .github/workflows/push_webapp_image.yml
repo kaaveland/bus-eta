@@ -2,6 +2,11 @@ name: Build webapp image
 
 on:
   push:
+    paths:
+      - kollektivkart/**
+      - Dockerfile
+      - pyproject.toml
+      - mise.toml
     branches:
       - main
   workflow_dispatch: # Trigger workflow manually
