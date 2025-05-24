@@ -82,8 +82,7 @@ export const MapComponent: React.FC<MapProps> = (props) => {
                 size: 10,
                 // @ts-expect-error this is actually available despite the typing
                 colorscale: "Viridis",
-                reversescale: false,
-                cmax: 3,
+                cmax: 5,
                 cmin: 1,
                 name: ""
               },

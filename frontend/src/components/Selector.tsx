@@ -1,16 +1,16 @@
 import React from "react";
 import type {Hour, Partition} from "../api.ts";
-import {titleFor, type View} from "../App.tsx";
+import {type Datasource, titleFor, type View} from "../App.tsx";
 
 export interface PartitionSelectorProps {
   partitions: Partition[]
   selected: Partition
-  handleSelect: React.Dispatch<React.SetStateAction<Partition>>
+  handleSelect: (partition: Partition) => void
 }
 
 export interface HourSelectorProps {
   selected: Hour,
-  handleSelect: React.Dispatch<React.SetStateAction<Hour>>
+  handleSelect: (hour: Hour) => void
 }
 
 export const PartitionSelector: React.FC<PartitionSelectorProps> = ({partitions, selected, handleSelect}) => {
@@ -39,9 +39,9 @@ export const HourSelector: React.FC<HourSelectorProps> = ({selected, handleSelec
 };
 
 export interface ViewSelectorProps {
-  views: View[]
-  selected: View
-  handleSelect: React.Dispatch<React.SetStateAction<View>>
+  views: Datasource[]
+  selected: Datasource
+  handleSelect: (ds: Datasource) => void;
 }
 
 export const ViewSelector: React.FC<ViewSelectorProps> = (props: ViewSelectorProps) => {
