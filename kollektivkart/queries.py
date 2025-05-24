@@ -99,7 +99,7 @@ def legs(
 ) -> pd.DataFrame:
     return db.sql(
         """
-SELECT 
+SELECT distinct on (from_stop, to_stop, dataSource)
   from_stop || ' to ' || to_stop as name,
   from_stop,
   to_stop,
@@ -135,7 +135,7 @@ def hot_spots(
 ) -> pd.DataFrame:
     return db.sql(
         """
-    SELECT 
+    SELECT distinct on (from_stop, to_stop, dataSource)
       from_stop || ' to ' || to_stop as name,
       from_stop,
       to_stop,        
@@ -249,7 +249,7 @@ with prev as (
 )
 from prev join cur using(dataSource, from_stop, to_stop)
     join stop_line using(dataSource, from_stop, to_stop)
-select
+select distinct on (from_stop, to_stop, dataSource)
   from_stop || ' to ' || to_stop as name,
   cur.mean_hourly_duration - prev.mean_hourly_duration as net_change_seconds,
   (100 * (net_change_seconds :: int4) / 
