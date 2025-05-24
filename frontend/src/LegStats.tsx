@@ -3,6 +3,7 @@ import {type TimeSlot, useTimeSlot} from "./UrlParams.ts";
 import {useNavigate, useParams, useSearchParams} from "react-router-dom";
 import {useEffect, useState} from "react";
 import {MapComponent, type MapView} from "./components/MapComponent.tsx";
+import NavBar from "./components/NavBar.tsx";
 
 export interface LegStatsProps {
   partitions: Partition[]
@@ -13,6 +14,8 @@ export default function LegStats({partitions, dataSources}: LegStatsProps) {
   const slot: TimeSlot = useTimeSlot(partitions);
   const {dataSource} = useParams();
   const ds = Object.keys(dataSources).find(k => k === dataSource) ?? "RUT";
+  const dsLabel = dataSources[ds] ?? ds;
+
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -51,11 +54,9 @@ export default function LegStats({partitions, dataSources}: LegStatsProps) {
 
   return (
     <>
-      <h2>Leg stats {ds} {slot.partition.year}/{slot.partition.month} {slot.hour}:00</h2>
-      {!mapData ? <p>Loading...</p> : <MapComponent name={`Leg stats ${ds}`} partition={{
-        year: slot.partition.year,
-        month: slot.partition.month
-      }} showHour={{
+      <NavBar slot={slot}/>
+      <h2>Leg stats {dsLabel} {slot.partition.year}/{slot.partition.month} {slot.hour}:00</h2>
+      {!mapData ? <p>Loading...</p> : <MapComponent name={`Leg stats ${dsLabel}`} partition={slot.partition} showHour={{
         hour: slot.hour
       }} data={mapData} onRelayout={rememberRelayout} view={mapView}/>}
     </>

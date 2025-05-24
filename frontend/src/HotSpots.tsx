@@ -3,6 +3,7 @@ import {useEffect, useState} from "react";
 import {useNavigate, useSearchParams} from "react-router-dom";
 import {type TimeSlot, useTimeSlot} from "./UrlParams";
 import {MapComponent, type MapView} from "./components/MapComponent.tsx";
+import NavBar from "./components/NavBar.tsx";
 
 export interface HotSpotsProps {
   partitions: Partition[]
@@ -29,7 +30,7 @@ export default function HotSpots({partitions}: HotSpotsProps) {
     lon: parseNumericParam(searchParams.get('lon'), 8),
     zoom: parseNumericParam(searchParams.get('zoom'), 5)
   });
-  
+
   const rememberRelayout = (newView: MapView) => {
     const params = new URLSearchParams();
     params.set('lat', newView.lat.toString());
@@ -49,6 +50,7 @@ export default function HotSpots({partitions}: HotSpotsProps) {
 
   return (
     <>
+      <NavBar slot={slot}/>
       <h2>Hot spots {slot.partition.year}/{slot.partition.month} {slot.hour}:00</h2>
       {!mapData ? <p>Loading...</p> : <MapComponent name={"Hot spots"} partition={{
               year: slot.partition.year,
