@@ -7,7 +7,6 @@ import dash
 import duckdb
 from flask import g, send_file, request, Response
 from dash import html, dcc, Output, Input
-import plotly.express as px
 from datetime import timedelta, date
 
 from . import about
@@ -121,18 +120,6 @@ app.layout = html.Div(
                         html.Div(id="download-region-csv"),
                     ],
                 ),
-                dcc.Tab(
-                    label="Rush intensity",
-                    value="rush-intensity",
-                    children=[
-                        html.H2("Most rush intensity detected in data set"),
-                        html.P(
-                            "This visualization shows which legs in the data set that had the most rush-intensity overall."
-                        ),
-                        rush_intensity,
-                        dcc.Graph(id="rush-intensity"),
-                    ],
-                ),
                 dcc.Tab(label="About", value="about", children=about.create(db)),
             ],
         ),
@@ -215,32 +202,6 @@ def region_csv(data_source, month, hour):
         as_attachment=True,
         download_name=f"{data_source}_{month.isoformat()}_{hour}.csv",
     )
-
-
-@app.callback(
-    Output("rush-intensity", "figure"),
-    Input("datasource", "value"),
-    Input("month", "value"),
-)
-def worst_rush_intensity(data_source: str, month: int):
-    months = queries.months(g.db)
-    month = months[month]
-    df = queries.most_rush_intensity(g.db, month, data_source, limit=40)
-    return px.bar(
-        df.sort_values(by="rush_intensity"),
-        x="rush_intensity",
-        y="name",
-        orientation="h",
-        height=800,
-        color="hourly_count",
-        hover_data=[
-            "air_distance_meters",
-            "hourly_duration",
-            "hourly_quartile",
-            "monthly_duration",
-        ],
-    )
-
 
 @server.route("/ready")
 def readycheck():
