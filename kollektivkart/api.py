@@ -61,9 +61,10 @@ def leg_stats(year: int, month: int, hour: int, datasource: str) -> Response:
 def comparison(
     cur_year: int, cur_month: int, prev_year: int, prev_month: int, hour: int
 ) -> Response:
+    data_source = request.args.get("data_source")
     cur = date(cur_year, cur_month, 1)
     prev = date(prev_year, prev_month, 1)
-    data = queries.comparisons(g.db, cur, prev, hour)
+    data = queries.comparisons(g.db, cur, prev, hour, data_source=data_source, limit=2000)
     return to_json(data)
 
 

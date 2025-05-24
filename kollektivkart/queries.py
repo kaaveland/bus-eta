@@ -278,9 +278,8 @@ select
   cur.hourly_count as cur_hourly_count,
   prev.hourly_count as prev_hourly_count,
   dataSource as data_source
-where cur.month != prev.month    
+where cur.month != prev.month and ($data_source is null or $data_source = dataSource)
 order by abs(net_change_proportion) desc
-limit $limit;
 """
 
 
@@ -289,9 +288,11 @@ def comparisons(
     prev_month: date,
     cur_month: date,
     hour: int,
-    limit: int = 1000,
+    limit: int = 2000,
+    data_source: str | None = None,
 ) -> pd.DataFrame:
+    params = dict(prev_month=prev_month, cur_month=cur_month, hour=hour, data_source=data_source)
     return db.sql(
-        _comparisons,
-        params=dict(prev_month=prev_month, cur_month=cur_month, hour=hour, limit=limit),
+        _comparisons + ("limit $limit;" if data_source is None else ";"),
+        params={'limit': limit, **params} if data_source is None else params,
     ).df()
