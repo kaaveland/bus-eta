@@ -1,7 +1,7 @@
 import {useEffect, useState} from 'react'
 import {type Bootstrap, loadBootstrap} from "./api.ts";
-import App from "./App.tsx";
 import '@csstools/normalize.css';
+import { AppRoutes } from "./Routes.tsx";
 
 interface LoadingIssue {
   problem: string
@@ -27,7 +27,7 @@ function Loader() {
     </div>;
   } else {
     return (
-        <App bootstrap={bootstrap}/>
+      <AppRoutes bootstrap={bootstrap} />
     )
   }
 }

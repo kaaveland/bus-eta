@@ -66,7 +66,6 @@ export const MapComponent: React.FC<MapProps> = (props) => {
     onRelayout(updated);
   };
 
-  // @ts-ignore
   return (mounted &&
       <Plot
           style={{width: "100%"}}
@@ -81,7 +80,7 @@ export const MapComponent: React.FC<MapProps> = (props) => {
                 color: data.rush_intensity,
                 size: 12,
                 // @ts-expect-error this is actually available despite the typing
-                colorscale: "Cividis",
+                colorscale: "Viridis",
                 reversescale: false,
                 showscale: true,
                 cmax: 3,

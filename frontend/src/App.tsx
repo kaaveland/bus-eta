@@ -53,14 +53,6 @@ export default function App({bootstrap}: { bootstrap: Bootstrap }) {
     }
   }, [globalPartition, globalHour, view]);
 
-  useEffect(() => {
-    if (view !== "Hot spots" && mapData) {
-      const meanLat = mapData.lat.reduce((a, b) => a + b, 0) / mapData.lat.length;
-      const meanLon = mapData.lon.reduce((a, b) => a + b, 0) / mapData.lon.length;
-      setMapView((m: MapView) => ({...m, lat: meanLat, lon: meanLon}));
-    }
-  }, [view, mapData]);
-
   if (!mapData) {
     return <p>Loading...</p>
   } else {
