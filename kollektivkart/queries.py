@@ -248,6 +248,7 @@ with prev as (
   from leg_stats where hour = $hour and month = $cur_month
 )
 from prev join cur using(dataSource, from_stop, to_stop)
+    join stop_line using(dataSource, from_stop, to_stop)
 select
   from_stop || ' to ' || to_stop as name,
   cur.mean_hourly_duration - prev.mean_hourly_duration as net_change_seconds,
@@ -278,7 +279,9 @@ select
   cur.hourly_count as cur_hourly_count,
   prev.hourly_count as prev_hourly_count,
   dataSource as data_source
-where cur.month != prev.month and ($data_source is null or $data_source = dataSource)
+where cur.month != prev.month
+  and ($data_source is null or $data_source = dataSource)
+  and ($line_ref is null OR $line_ref = stop_line.lineRef)
 order by abs(net_change_proportion) desc
 """
 
@@ -290,8 +293,9 @@ def comparisons(
     hour: int,
     limit: int = 2000,
     data_source: str | None = None,
+    line_ref: str | None = None,
 ) -> pd.DataFrame:
-    params = dict(prev_month=prev_month, cur_month=cur_month, hour=hour, data_source=data_source)
+    params = dict(prev_month=prev_month, cur_month=cur_month, hour=hour, data_source=data_source, line_ref=line_ref)
     return db.sql(
         _comparisons + ("limit $limit;" if data_source is None else ";"),
         params={'limit': limit, **params} if data_source is None else params,

@@ -62,9 +62,10 @@ def comparison(
     cur_year: int, cur_month: int, prev_year: int, prev_month: int, hour: int
 ) -> Response:
     data_source = request.args.get("data_source")
+    line_ref = request.args.get("line_ref")
     cur = date(cur_year, cur_month, 1)
     prev = date(prev_year, prev_month, 1)
-    data = queries.comparisons(g.db, cur, prev, hour, data_source=data_source, limit=2000)
+    data = queries.comparisons(g.db, cur, prev, hour, data_source=data_source, line_ref=line_ref, limit=2000)
     return to_json(data)
 
 
