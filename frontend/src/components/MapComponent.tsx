@@ -16,7 +16,7 @@ interface MapProps {
   lineRef?: string
   data: LegStats,
   view: MapView,
-  onRelayout: React.Dispatch<React.SetStateAction<MapView>>
+  onRelayout: (view: MapView) => void
 }
 
 

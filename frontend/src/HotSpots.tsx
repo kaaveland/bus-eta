@@ -1,6 +1,6 @@
 import {hotspots, type LegStats, type Partition} from "./api.ts";
 import {useEffect, useState} from "react";
-import {useNavigate} from "react-router-dom";
+import {useNavigate, useSearchParams} from "react-router-dom";
 import {type TimeSlot, useTimeSlot} from "./UrlParams";
 import {MapComponent, type MapView} from "./components/MapComponent.tsx";
 
@@ -16,12 +16,29 @@ export default function HotSpots({partitions}: HotSpotsProps) {
     void navigate(`/${slot.partition.year}/${slot.partition.month}/${slot.hour}/hot-spots`);
   }, [slot.partition.month, slot.partition.year, slot.hour, navigate]);
 
-  const [mapView, setMapView] = useState<MapView>({
-    lat: 60.91,
-    lon: 8,
-    zoom: 5
-  });
+  const [searchParams, setSearchParams] = useSearchParams();
 
+  const parseNumericParam = (param: string | null, defaultValue: number): number => {
+    if (!param) return defaultValue;
+    const parsed = parseFloat(param);
+    return isFinite(parsed) ? parsed : defaultValue;
+  };
+  
+  const [mapView, setMapView] = useState<MapView>({
+    lat: parseNumericParam(searchParams.get('lat'), 60.91),
+    lon: parseNumericParam(searchParams.get('lon'), 8),
+    zoom: parseNumericParam(searchParams.get('zoom'), 5)
+  });
+  
+  const rememberRelayout = (newView: MapView) => {
+    const params = new URLSearchParams();
+    params.set('lat', newView.lat.toString());
+    params.set('lon', newView.lon.toString());
+    params.set('zoom', newView.zoom.toString());
+    setSearchParams(params);
+    return setMapView(newView);
+  };
+  
   const [mapData, setMapData] = useState<LegStats | null>(null);
 
   useEffect(() => {
@@ -38,7 +55,7 @@ export default function HotSpots({partitions}: HotSpotsProps) {
               month: slot.partition.month
           }} showHour={{
               hour: slot.hour
-          }} data={mapData} onRelayout={setMapView} view={mapView} />}
+          }} data={mapData} onRelayout={rememberRelayout} view={mapView} />}
     </>
   );
 }
