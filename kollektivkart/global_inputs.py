@@ -12,7 +12,7 @@ def render_month_slider(
         min=0,
         max=len(months) - 1,
         step=1,
-        marks={i: month.isoformat() for i, month in enumerate(months) if i % 2 == 0},
+        marks={i: month.isoformat() for i, month in enumerate(months) if i % 4 == 0},
         value=len(months) - default_from_end,
         included=False,
     )
@@ -21,7 +21,9 @@ def render_month_slider(
 def render_global_inputs(db: DuckDBPyConnection) -> html.Div:
     month_slider = render_month_slider(db, "month")
     hour_slider = dcc.Slider(
-        id="hour", min=0, max=23, step=1, marks={i: str(i) for i in range(24)}, value=15
+        id="hour", min=0, max=23, step=1,
+        marks={i: str(i) for i in range(24) if i % 2 == 0},
+        value=15
     )
 
     return html.Div(
