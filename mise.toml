@@ -2,6 +2,7 @@
 node = "24"
 "ubi:duckdb/duckdb" = "latest"
 uv = "latest"
+"ubi:kaaveland/thumper" = "latest"
 
 [env]
 _.python.venv = { path = ".venv" }
