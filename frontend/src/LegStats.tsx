@@ -1,5 +1,5 @@
 import {type DataSources, type Hour, leg_stats, type LegStats, type Partition} from "./api.ts";
-import {type TimeSlot, useTimeSlot} from "./UrlParams.ts";
+import {defaultMapView, relayoutMapHook, type TimeSlot, useTimeSlot} from "./UrlParams.ts";
 import {useNavigate, useParams, useSearchParams} from "react-router-dom";
 import {useEffect, useState} from "react";
 import {MapComponent, type MapView} from "./components/MapComponent.tsx";
@@ -25,27 +25,8 @@ export default function LegStats({partitions, dataSources}: LegStatsProps) {
 
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-
-  const parseNumericParam = (param: string | null, defaultValue: number): number => {
-    if (!param) return defaultValue;
-    const parsed = parseFloat(param);
-    return isFinite(parsed) ? parsed : defaultValue;
-  };
-
-  const [mapView, setMapView] = useState<MapView>({
-    lat: parseNumericParam(searchParams.get('lat'), 60.91),
-    lon: parseNumericParam(searchParams.get('lon'), 8),
-    zoom: parseNumericParam(searchParams.get('zoom'), 5)
-  });
-
-  const rememberRelayout = (newView: MapView) => {
-    const params = new URLSearchParams();
-    params.set('lat', newView.lat.toString());
-    params.set('lon', newView.lon.toString());
-    params.set('zoom', newView.zoom.toString());
-    setSearchParams(params);
-    return setMapView(newView);
-  };
+  const [mapView, setMapView] = useState<MapView>(defaultMapView(searchParams));
+  const rememberRelayout = relayoutMapHook(setSearchParams, setMapView);
 
   const [mapData, setMapData] = useState<LegStats | null>(null);
 
@@ -68,13 +49,13 @@ export default function LegStats({partitions, dataSources}: LegStatsProps) {
   };
 
   const setDataSource = (ds: Datasource) => {
-    void navigate(`/${slot.partition.year}/${slot.partition.month}/${slot.hour}/legs/${ds.id}`)
+    void navigate(`/${slot.partition.year}/${slot.partition.month}/${slot.hour}/legs/${ds.id}`);
   };
 
   return (
     <>
       <NavBar slot={slot}/>
-      <h2>Leg stats {dsLabel} {slot.partition.year}/{slot.partition.month} {slot.hour}:00</h2>
+      <h2>Leg stats {dsLabel} {slot.partition.year}/{slot.partition.month} {slot.hour}:00-{slot.hour + 1}:00</h2>
       <div className="controls">
         <PartitionSelector partitions={partitions} selected={slot.partition} handleSelect={setPartition}/>
         <HourSelector selected={{hour: slot.hour}} handleSelect={setHour} />
