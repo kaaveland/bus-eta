@@ -76,6 +76,7 @@ def draw_map(
         range_color=[-50, 50]
     )
     fig.update_traces(hovertemplate=hovertooltip(hour, prev_month, cur_month))
+    fig.update_traces(marker=dict(size=10))
     return fig
 
 

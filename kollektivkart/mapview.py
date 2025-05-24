@@ -68,6 +68,7 @@ def draw_map(
         range_color=[1.0, range_color_scale_stop],
     )
     fig.update_traces(hovertemplate=tooltip)
+    fig.update_traces(marker=dict(size=10))
     return fig
 
 
