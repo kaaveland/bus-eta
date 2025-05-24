@@ -149,7 +149,7 @@ As alluded to under the previous section, I've not decided whether to make somet
 here are some things that _should_ be done:
 
 - Tons of usability bugs and annoyances to fix in the webapp.
-- Fix structural issues in the project, separate the scripts, notebooks and the webapp into different packages.
+- Fix structural issues in the project, separate the scripts, notebooks and the webapp into different packages. ✅
 - Add automated tests.
 - Set up a nightly job to fetch new data and update the app. This also requires introducing partitioning by date
   to avoid aggregating through all the old data again. ✅
