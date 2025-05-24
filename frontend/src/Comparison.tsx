@@ -2,6 +2,7 @@ import type {Partition} from "./api.ts";
 import {type TimeSlot, useTimeSlot} from "./UrlParams.ts";
 import {useNavigate, useParams} from "react-router-dom";
 import {useEffect} from "react";
+import NavBar from "./components/NavBar.tsx";
 
 export interface ComparisonProps {
   partitions: Partition[]
@@ -19,6 +20,9 @@ export default function Comparison({partitions}: ComparisonProps) {
   }, [slot.partition.year, slot.partition.month, slot.hour, navigate, prevPartition.year, prevPartition.month]);
 
   return (
-    <h2>Comparison {slot.partition.year}/{slot.partition.month} with {prevPartition.year}/{prevPartition.month} at {slot.hour}:00</h2>
+    <>
+      <NavBar slot={slot}/>
+      <h2>Comparison {slot.partition.year}/{slot.partition.month} with {prevPartition.year}/{prevPartition.month} at {slot.hour}:00</h2>
+    </>
   )
 }
