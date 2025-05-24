@@ -45,7 +45,7 @@ Typical delay at {col("to_stop")} {col("prev_hourly_delay")}s → {col("cur_hour
 Average travel time {col("prev_mean_hourly_duration")}s → {col("cur_mean_hourly_duration")}s<br>
 Changed {col("net_change_seconds")}s ({col("net_change_pct")}% change)<br>
 Typical travel time {col("prev_hourly_duration")}s → {col("cur_hourly_duration")}s<br>
-75% faster than {col("prev_hourly_quartile")}s → {col("cur_hourly_quartile")}s<br>
+75% percentile traveltime {col("prev_hourly_quartile")}s → {col("cur_hourly_quartile")}s<br>
 Deviation for leg {col("prev_hourly_deviation")}s → {col("cur_hourly_deviation")}s<br>
 Counted traffic {col("prev_hourly_count")} → {col("cur_hourly_count")}
 """
