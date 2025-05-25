@@ -9,6 +9,9 @@
 
 .controls label * {
     margin-left: 1rem;
+    max-width: 13ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .header {
