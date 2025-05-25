@@ -1,5 +1,5 @@
 import React from "react";
-import type {DataSources, Hour, Partition} from "../api.ts";
+import type {DataSources, Hour, LineRef, Partition} from "../api.ts";
 
 export interface Datasource {
   label: string,
@@ -68,3 +68,26 @@ export const ViewSelector: React.FC<ViewSelectorProps> = (props: ViewSelectorPro
     </select>
   </label>
 };
+
+export interface LinerefSelectorProps {
+  lineRefs: LineRef[] | null
+  defaultLabel: string
+  selected: string | null,
+  handleSelect: (ref: string | null) => void;
+}
+
+export const LinerefSelector: React.FC<LinerefSelectorProps> = (props: LinerefSelectorProps) => {
+  const { lineRefs, defaultLabel, selected } = props;
+  const options = [{
+    label: defaultLabel, line_ref: null
+  }, ...(!lineRefs ? [] : lineRefs)];
+  const selectedIndex = options.findIndex(v => v.line_ref === selected);
+  return <label>
+    Line
+    <select value={selectedIndex} onChange={(e) => props.handleSelect(options[parseInt(e.target.value)].line_ref)}>
+      {options.map((v, i) => (
+        <option key={i} value={i}>{v.label}</option>
+      ))}
+    </select>
+  </label>
+}

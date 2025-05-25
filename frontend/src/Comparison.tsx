@@ -34,7 +34,7 @@ export default function Comparison({partitions}: ComparisonProps) {
   const [comparisonData, setComparisonData] = useState<LegComparison | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const [mapView, setMapView] = useState<MapView>(defaultMapView(searchParams));
-  const rememberRelayout = relayoutMapHook(setSearchParams, setMapView);
+  const rememberRelayout = relayoutMapHook(setSearchParams, setMapView, searchParams);
 
   useEffect(() => {
     comparisonStats({previous: prevPartition, current: slot.partition, hour: slot.hour})

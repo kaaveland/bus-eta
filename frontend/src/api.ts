@@ -66,7 +66,15 @@ export type LineRef = {
 };
 
 export async function linesFor(datasource: string): Promise<LineRef[]> {
-  return await fetchJson(`lines/${datasource}`);
+  const lines = await fetchJson<LineRef[]>(`lines/${datasource}`);
+  const lastSeg = (label: string) => {
+    const parts = label.split("_");
+    return parts[parts.length - 1];
+  };
+  return lines.map((ref) => ({
+    label: lastSeg(ref.label),
+    line_ref: ref.line_ref
+  }));
 }
 
 // These things rarely change

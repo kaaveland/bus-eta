@@ -22,14 +22,14 @@ export const defaultMapView = (searchParams: URLSearchParams): MapView => {
 }
 
 export const relayoutMapHook = (
-  setSearchParams: (params: URLSearchParams) => void, setMapView: (newView: MapView) => void
+  setSearchParams: (params: URLSearchParams) => void, setMapView: (newView: MapView) => void, searchParams: URLSearchParams
 ) => {
   return (newView: MapView) => {
-    const params = new URLSearchParams();
-    params.set('lat', newView.lat.toString());
-    params.set('lon', newView.lon.toString());
-    params.set('zoom', newView.zoom.toString());
-    setSearchParams(params);
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('lat', newView.lat.toString());
+    newParams.set('lon', newView.lon.toString());
+    newParams.set('zoom', newView.zoom.toString());
+    setSearchParams(newParams);
     return setMapView(newView);
   };
 }

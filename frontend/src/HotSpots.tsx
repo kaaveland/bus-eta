@@ -20,7 +20,7 @@ export default function HotSpots({partitions}: HotSpotsProps) {
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [mapView, setMapView] = useState<MapView>(defaultMapView(searchParams));
-  const rememberRelayout = relayoutMapHook(setSearchParams, setMapView);
+  const rememberRelayout = relayoutMapHook(setSearchParams, setMapView, searchParams);
 
   const [mapData, setMapData] = useState<LegStats | null>(null);
 
