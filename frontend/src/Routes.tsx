@@ -13,15 +13,16 @@ export const AppRoutes = ({bootstrap} : AppRoutesProps) => {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Comparison partitions={bootstrap.partitions} />}/>
+        <Route path="/" element={<Comparison partitions={bootstrap.partitions} dataSources={bootstrap.dataSources}/>}/>
         <Route path="/:year/:month/:hour">
           <Route path="about" element={<About partitions={bootstrap.partitions} stats={bootstrap.stats} />}/>
           <Route path="hot-spots" element={<HotSpots partitions={bootstrap.partitions} />}/>
           <Route path="legs/" element={<LegStats partitions={bootstrap.partitions} dataSources={bootstrap.dataSources}/>}/>
           <Route path="legs/:dataSource" element={<LegStats partitions={bootstrap.partitions} dataSources={bootstrap.dataSources}/>}/>
           <Route path="legs/:dataSource/:lineRef" element={<LegStats partitions={bootstrap.partitions} dataSources={bootstrap.dataSources}/>}/>
-          <Route path="comparison/" element={<Comparison partitions={bootstrap.partitions}/>}/>
-          <Route path="comparison/:prevYear/:prevMonth" element={<Comparison partitions={bootstrap.partitions}/>}/>
+          <Route path="comparison/" element={<Comparison partitions={bootstrap.partitions} dataSources={bootstrap.dataSources}/>}/>
+          <Route path="comparison/:prevYear/:prevMonth" element={<Comparison partitions={bootstrap.partitions} dataSources={bootstrap.dataSources}/>}/>
+          <Route path="comparison/:prevYear/:prevMonth/:dataSource" element={<Comparison partitions={bootstrap.partitions} dataSources={bootstrap.dataSources}/>}/>
         </Route>
       </Routes>
     </BrowserRouter>

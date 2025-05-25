@@ -72,12 +72,12 @@ export const ViewSelector: React.FC<ViewSelectorProps> = (props: ViewSelectorPro
 export interface LinerefSelectorProps {
   lineRefs: LineRef[] | null
   defaultLabel: string
-  selected: string | null,
+  selected: string | null
   handleSelect: (ref: string | null) => void;
 }
 
 export const LinerefSelector: React.FC<LinerefSelectorProps> = (props: LinerefSelectorProps) => {
-  const { lineRefs, defaultLabel, selected } = props;
+  const {lineRefs, defaultLabel, selected} = props;
   const options = [{
     label: defaultLabel, line_ref: null
   }, ...(!lineRefs ? [] : lineRefs)];
@@ -90,4 +90,28 @@ export const LinerefSelector: React.FC<LinerefSelectorProps> = (props: LinerefSe
       ))}
     </select>
   </label>
+}
+
+
+export interface DatasourceSelectorProps {
+  dataSources: Datasource[]
+  defaultLabel: string
+  selected: string | null
+  handleSelect: (ref: string | null) => void;
+}
+
+export const DatasourceSelector: React.FC<DatasourceSelectorProps> = (props: DatasourceSelectorProps) => {
+  const {dataSources, defaultLabel, selected} = props;
+  const options = [{
+    label: defaultLabel, id: null
+  }, ...dataSources];
+  const selectedIndex = options.findIndex(v => v.id === selected);
+  return (<label>
+    Datasource
+    <select value={selectedIndex} onChange={(e) => props.handleSelect(options[parseInt(e.target.value)].id)}>
+      {options.map((v, i) => (
+        <option key={i} value={i}>{v.label}</option>
+      ))}
+    </select>
+  </label>);
 }
