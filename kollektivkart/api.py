@@ -121,3 +121,14 @@ def rush_intensity_rank(year: int, month: int) -> Response:
             g.db, partition, request.args.get("data_source"), limit=100
         )
     )
+
+@app.route("/ready")
+def readycheck():
+    latest_data = date.fromisoformat(get_stats()["date_range"]["end"])
+    stale = latest_data < date.today() - timedelta(days=3)
+    response = dict(status="up", data_date=latest_data.isoformat(), stale=stale)
+    return Response(
+        orjson.dumps(response),
+        status=500 if stale else 200,
+        content_type="application/json",
+    )
