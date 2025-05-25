@@ -13,6 +13,19 @@ export type StatsDataResponse = {
   memory: number
 };
 
+type RecordFromTable<T extends { [key: string]: unknown[] }> = {
+  [K in keyof T]: T[K] extends Array<infer U> ? U : never;
+};
+
+export function getRow<T extends { [key: string]: unknown[] }>(
+  index: number,
+  table: T
+): RecordFromTable<T> {
+  return Object.fromEntries(
+    Object.entries(table).map(([key, column]) => [key, column[index]])
+  ) as RecordFromTable<T>;
+}
+
 async function fetchJson<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
     headers: {

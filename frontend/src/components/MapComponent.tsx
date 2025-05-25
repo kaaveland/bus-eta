@@ -108,6 +108,9 @@ export const MapComponent: React.FC<MapProps> = (props) => {
             title: {
               text: `${name} for ${year}-${month.toString().padStart(2, '0')} between ${hour}:00 and ${hour + 1}:00${dataSource ? ` | Source: ${dataSource}` : ''}${lineRef ? ` | Line: ${lineRef}` : ''}`,
             },
+            hoverlabel: {
+              align: "left"
+            },
             // @ts-expect-error the dependency we use for type-checking is wrongly typed (-:
             map: {
               center: {
