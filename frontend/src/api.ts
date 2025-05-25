@@ -1,5 +1,5 @@
 // Find definitions/routes in api.py
-const BASE_URL = "https://kollektivcache.b-cdn.net/api/";
+const BASE_URL = "https://kollektivcache.b-cdn.net/kollektivkart/";
 
 export type StatsDataResponse = {
   aggregated_count: number,
