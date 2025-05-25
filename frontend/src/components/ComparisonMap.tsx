@@ -89,6 +89,7 @@ export const ComparisonMap: React.FC<ComparisonMapProps> = (props) => {
   return (mounted &&
       <Plot
           useResizeHandler={true}
+          className="figure"
           data={[{
             // @ts-expect-error the dependency we use for type-checking is wrongly typed (-:
             type: "scattermap",

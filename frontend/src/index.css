@@ -17,3 +17,8 @@
     justify-content: start;
     gap: 1rem;
 }
+
+.figure {
+    width: 100%;
+    max-width: 1024px;
+}

@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import Plot from 'react-plotly.js';
-import type {Hour, LegStats, Partition} from "../api.ts";
+import {getRow, type Hour, type LegStats, type Partition} from "../api.ts";
 
 export interface MapView {
   lat: number,
@@ -19,6 +19,36 @@ interface MapProps {
   onRelayout: (view: MapView) => void
 }
 
+const tooltipFrom = (partition: Partition, hour: number, i: number, stats: LegStats) => {
+  const {
+    name,
+    to_stop,
+    data_source,
+    air_distance_meters,
+    mean_hourly_duration,
+    mean_monthly_duration,
+    rush_intensity,
+    hourly_quartile,
+    monthly_duration,
+    hourly_duration,
+    hourly_delay,
+    hourly_deviation,
+    monthly_delay,
+    hourly_count,
+    monthly_count
+  } = getRow(i, stats);
+
+  return `${data_source} <b>${name}</b><br>
+Air distance ${air_distance_meters}m<br>
+Stats for ${partition.year}/${partition.month} between ${hour}:00-${hour+1}:00<br><br>
+Rush intensity ${rush_intensity}<br>
+Takes around ${hourly_duration}s-${hourly_quartile}s now vs ${monthly_duration}s normally<br>
+Average ${mean_hourly_duration}s travel time now vs ${mean_monthly_duration}s rest of day<br>
+Delayed ${hourly_delay}s at ${to_stop} now vs ${monthly_delay}s normally<br>
+Collects ${hourly_deviation}s delay on this stretch<br>
+${hourly_count} vehicle registrations this hour of ${monthly_count} this month
+<extra></extra>`
+};
 
 export const MapComponent: React.FC<MapProps> = (props) => {
   const {name, partition, showHour, dataSource, lineRef, data, view, onRelayout} = props;
@@ -30,22 +60,6 @@ export const MapComponent: React.FC<MapProps> = (props) => {
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  const makeTooltip = (hour: number) => {
-    const this_hour = `between ${hour}:00 and ${hour + 1}:00`;
-    const col = (idx: number, fmt = "") => `%{customdata[${idx}]${fmt}}`;
-    // I am sorry
-    return `
-  <b>${col(0)}</b> ${this_hour}<br>
-  Air distance ${col(1)}m<br><br>
-  Rush intensity ${col(2, ":.1f")}, 25% of transports take longer than ${col(3)}s ${this_hour}<br>
-  ${col(10)} vehicles recorded for this month and ${col(11)} ${this_hour}<br>
-  Monthly median travel time ${col(5)}s, ${col(4)}s ${this_hour}<br>
-  Monthly median delay is ${col(7)}s, ${col(6)}s ${this_hour}<br>
-  Monthly median deviation is ${col(9)}s, ${col(8)}s ${this_hour}
-  <extra></extra>
-  `;
-  };
 
   const handleRelayout = (event: unknown) => {
     const updated = { ...view };
@@ -69,6 +83,7 @@ export const MapComponent: React.FC<MapProps> = (props) => {
   return (mounted &&
       <Plot
           useResizeHandler={true}
+          className="figure"
           data={[
             {
               // @ts-expect-error the dependency we use for type-checking is wrongly typed (-:
@@ -85,21 +100,7 @@ export const MapComponent: React.FC<MapProps> = (props) => {
                 cmin: 1,
                 name: ""
               },
-              customdata: data.name.map((_, i) => [
-                data.name[i],
-                data.air_distance_meters[i],
-                data.rush_intensity[i],
-                data.hourly_quartile[i],
-                data.hourly_duration[i],
-                data.monthly_duration[i],
-                data.hourly_delay[i],
-                data.monthly_delay[i],
-                data.hourly_deviation[i],
-                data.monthly_deviation[i],
-                data.hourly_count[i],
-                data.monthly_count[i],
-              ]),
-              hovertemplate: makeTooltip(hour)
+              hovertemplate: data.name.map((_, i) => tooltipFrom(partition, hour, i, data))
             }
           ]}
           layout={{

@@ -107,7 +107,9 @@ export type LegStats = {
   monthly_deviation: number[],
   hourly_deviation: number[],
   monthly_count: number[],
-  hourly_count: number[]
+  hourly_count: number[],
+  mean_hourly_duration: number[],
+  mean_monthly_duration: number[]
 };
 
 export async function hotspots(year: number, month: number, hour: number): Promise<LegStats> {
