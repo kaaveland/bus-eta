@@ -95,8 +95,6 @@ def comparisonview(app: Dash, state: dcc.Store):
         months = queries.months(g.db)
         cur = months[month]
         prev = months[prev_month]
-        if prev > cur:
-            prev, cur = cur, prev
         title = f"Travel time comparison between {cur.strftime('%Y-%m')} and {prev.strftime('%Y-%m')} for hour {hour}:00-{hour + 1}:00"
         df = queries.comparisons(g.db, prev, cur, hour, limit=2000)
         map_state = mapview.map_state_from_relayout(map_state, relayout_data)

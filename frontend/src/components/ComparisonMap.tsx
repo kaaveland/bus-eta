@@ -54,15 +54,6 @@ export const ComparisonMap: React.FC<ComparisonMapProps> = (props) => {
   const { data, view, onRelayout, showHour, partition, prevPartition } = props;
   const {hour} = showHour;
 
-  // Y U NO HAVE TUPLE COMPARISONS
-  const isEarlier =
-    prevPartition.year < partition.year ||
-    (prevPartition.year === partition.year && prevPartition.month < partition.month);
-
-  const [past, future] = isEarlier
-    ? [prevPartition, partition]
-    : [partition, prevPartition];
-
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -105,11 +96,11 @@ export const ComparisonMap: React.FC<ComparisonMapProps> = (props) => {
               cmin: -50,
               name: ""
             },
-            hovertemplate: data.name.map((_, i) => tooltipFrom(past, future, hour, i, data))
+            hovertemplate: data.name.map((_, i) => tooltipFrom(prevPartition, partition, hour, i, data))
           }]}
           layout={{
             title: {
-              text: `Comparing ${past.year}/${past.month} and ${future.year}/${future.month} between  ${hour}:00-${hour + 1}:00`
+              text: `Comparing ${prevPartition.year}/${prevPartition.month} and ${partition.year}/${partition.month} between  ${hour}:00-${hour + 1}:00`
             },
             hoverlabel: {
               align: "left"
