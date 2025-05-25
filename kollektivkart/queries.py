@@ -278,11 +278,12 @@ select distinct on (from_stop, to_stop, dataSource)
   prev.monthly_count as prev_monthly_count,
   cur.hourly_count as cur_hourly_count,
   prev.hourly_count as prev_hourly_count,
-  dataSource as data_source
+  dataSource as data_source,
+  abs(net_change_proportion) as abs_net_change_proportion
 where cur.month != prev.month
   and ($data_source is null or $data_source = dataSource)
   and ($line_ref is null OR $line_ref = stop_line.lineRef)
-order by abs(net_change_proportion) desc
+order by abs_net_change_proportion desc
 """
 
 
@@ -299,4 +300,4 @@ def comparisons(
     return db.sql(
         _comparisons + ("limit $limit;" if data_source is None else ";"),
         params={'limit': limit, **params} if data_source is None else params,
-    ).df()
+    ).df().sort_values(by='abs_net_change_proportion')
