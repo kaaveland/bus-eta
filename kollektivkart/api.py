@@ -65,7 +65,15 @@ def comparison(
     line_ref = request.args.get("line_ref")
     cur = date(cur_year, cur_month, 1)
     prev = date(prev_year, prev_month, 1)
-    data = queries.comparisons(g.db, cur, prev, hour, data_source=data_source, line_ref=line_ref, limit=2000)
+    data = queries.comparisons(
+        g.db,
+        prev_month=prev,
+        cur_month=cur,
+        hour=hour,
+        data_source=data_source,
+        line_ref=line_ref,
+        limit=2000,
+    )
     return to_json(data)
 
 
@@ -121,6 +129,7 @@ def rush_intensity_rank(year: int, month: int) -> Response:
             g.db, partition, request.args.get("data_source"), limit=100
         )
     )
+
 
 @app.route("/ready")
 def readycheck():

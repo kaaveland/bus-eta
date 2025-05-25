@@ -296,8 +296,18 @@ def comparisons(
     data_source: str | None = None,
     line_ref: str | None = None,
 ) -> pd.DataFrame:
-    params = dict(prev_month=prev_month, cur_month=cur_month, hour=hour, data_source=data_source, line_ref=line_ref)
-    return db.sql(
-        _comparisons + ("limit $limit;" if data_source is None else ";"),
-        params={'limit': limit, **params} if data_source is None else params,
-    ).df().sort_values(by='abs_net_change_proportion')
+    params = dict(
+        prev_month=prev_month,
+        cur_month=cur_month,
+        hour=hour,
+        data_source=data_source,
+        line_ref=line_ref,
+    )
+    return (
+        db.sql(
+            _comparisons + ("limit $limit;" if data_source is None else ";"),
+            params={"limit": limit, **params} if data_source is None else params,
+        )
+        .df()
+        .sort_values(by="abs_net_change_proportion")
+    )

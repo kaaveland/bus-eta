@@ -203,6 +203,7 @@ def region_csv(data_source, month, hour):
         download_name=f"{data_source}_{month.isoformat()}_{hour}.csv",
     )
 
+
 @server.route("/ready")
 def readycheck():
     latest_data = date.fromisoformat(api.get_stats()["date_range"]["end"])

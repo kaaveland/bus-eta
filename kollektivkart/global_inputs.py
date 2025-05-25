@@ -21,9 +21,12 @@ def render_month_slider(
 def render_global_inputs(db: DuckDBPyConnection) -> html.Div:
     month_slider = render_month_slider(db, "month")
     hour_slider = dcc.Slider(
-        id="hour", min=0, max=23, step=1,
+        id="hour",
+        min=0,
+        max=23,
+        step=1,
         marks={i: str(i) for i in range(24) if i % 2 == 0},
-        value=15
+        value=15,
     )
 
     return html.Div(

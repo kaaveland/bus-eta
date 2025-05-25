@@ -73,7 +73,7 @@ def draw_map(
         zoom=zoom,
         height=800,
         hover_data=_hoverdata_columns,
-        range_color=[-50, 50]
+        range_color=[-50, 50],
     )
     fig.update_traces(hovertemplate=hovertooltip(hour, prev_month, cur_month))
     fig.update_traces(marker=dict(size=10))

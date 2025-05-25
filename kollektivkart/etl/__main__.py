@@ -34,8 +34,7 @@ parser.add_argument(
     type=int,
 )
 parser.add_argument(
-    "--skip-bq", action='store_true',
-    help="Do not fetch new data in BigQuery"
+    "--skip-bq", action="store_true", help="Do not fetch new data in BigQuery"
 )
 parser.add_argument(
     "data", help="Data repository, a folder or s3:// prefix to place output", type=str
@@ -56,10 +55,18 @@ def main():
     setup = _setup.format(threads=opts.max_cpus, mem_limit=opts.memory_limit_gb)
     db.execute(setup)
     root = opts.data
-    logging.info("Allow resource usage: cpu=%s ram=%sGB", opts.max_cpus, opts.memory_limit_gb)
+    logging.info(
+        "Allow resource usage: cpu=%s ram=%sGB", opts.max_cpus, opts.memory_limit_gb
+    )
     if not opts.skip_bq:
         client = Client()
-        sync.run_job(client, db, root, from_date=date(2024, 1, 1), to_date=date.today() - timedelta(days=1))
+        sync.run_job(
+            client,
+            db,
+            root,
+            from_date=date(2024, 1, 1),
+            to_date=date.today() - timedelta(days=1),
+        )
     if opts.invalidate:
         logging.info("Invalidate downstream of BQ")
     legs.run_job(db, root, opts.invalidate)
