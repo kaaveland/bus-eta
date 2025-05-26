@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Map background -->
+  <rect width="32" height="32" fill="#f8f9fa" rx="2"/>
+  
+  <!-- Map grid lines -->
+  <g stroke="#e0e0e0" stroke-width="0.5" fill="none">
+    <line x1="8" y1="0" x2="8" y2="32"/>
+    <line x1="16" y1="0" x2="16" y2="32"/>
+    <line x1="24" y1="0" x2="24" y2="32"/>
+    <line x1="0" y1="8" x2="32" y2="8"/>
+    <line x1="0" y1="16" x2="32" y2="16"/>
+    <line x1="0" y1="24" x2="32" y2="24"/>
+  </g>
+  
+  <!-- Transit route line -->
+  <path d="M4 12 L12 12 L20 20 L28 20" stroke="#007acc" stroke-width="2" fill="none" stroke-linecap="round"/>
+  
+  <!-- Bus icon -->
+  <g transform="translate(12, 8)">
+    <!-- Bus body -->
+    <rect x="0" y="2" width="8" height="6" rx="1" fill="#ff6b35"/>
+    <!-- Bus windows -->
+    <rect x="1" y="3" width="2" height="2" fill="#ffffff"/>
+    <rect x="5" y="3" width="2" height="2" fill="#ffffff"/>
+    <!-- Bus wheels -->
+    <circle cx="1.5" cy="9" r="1" fill="#333"/>
+    <circle cx="6.5" cy="9" r="1" fill="#333"/>
+  </g>
+  
+  <!-- Map pins/stops -->
+  <circle cx="6" cy="12" r="1.5" fill="#007acc"/>
+  <circle cx="26" cy="20" r="1.5" fill="#007acc"/>
+</svg>
