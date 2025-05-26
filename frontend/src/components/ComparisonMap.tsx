@@ -108,6 +108,7 @@ export const ComparisonMap: React.FC<ComparisonMapProps> = (props) => {
             title: {
               text: `Comparing ${prevPartition.year}/${prevPartition.month} and ${partition.year}/${partition.month} between  ${hour}:00-${hour + 1}:00`
             },
+            paper_bgcolor: '#f5f5f0',
             hoverlabel: {
               align: "left"
             },

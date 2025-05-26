@@ -52,22 +52,24 @@ export default function Comparison({partitions, dataSources}: ComparisonProps) {
 
   return (
     <>
+      <div className="content">
       <NavBar slot={slot}/>
-      <h2>Comparison {slot.partition.year}/{slot.partition.month} with {prevPartition.year}/{prevPartition.month} at {slot.hour}:00</h2>
-      <div className="controls">
-        <PartitionSelector partitions={partitions} selected={slot.partition} handleSelect={setPartition}/>
-        <HourSelector selected={{hour: slot.hour}} handleSelect={setHour} />
-        <PartitionSelector partitions={partitions} selected={prevPartition} handleSelect={setPrevPartition}/>
-        <DatasourceSelector dataSources={labelDatasources(dataSources)} handleSelect={setDataSource} selected={dataSource ?? null} defaultLabel="Top 2000"/>
+        <h2>Comparison</h2>
+        <div className="controls">
+          <PartitionSelector partitions={partitions} selected={slot.partition} handleSelect={setPartition}/>
+          <HourSelector selected={{hour: slot.hour}} handleSelect={setHour} />
+          <PartitionSelector partitions={partitions} selected={prevPartition} handleSelect={setPrevPartition}/>
+          <DatasourceSelector dataSources={labelDatasources(dataSources)} handleSelect={setDataSource} selected={dataSource ?? null} defaultLabel="Top 2000"/>
+        </div>
+        { !comparisonData ? <p>Loading...</p> : <ComparisonMap
+                name="Comparison"
+                partition={slot.partition}
+                prevPartition={prevPartition}
+                showHour={{hour: slot.hour}}
+                data={comparisonData}
+                view={mapView}
+                onRelayout={rememberRelayout} />}
       </div>
-      { !comparisonData ? <p>Loading...</p> : <ComparisonMap
-              name="Comparison"
-              partition={slot.partition}
-              prevPartition={prevPartition}
-              showHour={{hour: slot.hour}}
-              data={comparisonData}
-              view={mapView}
-              onRelayout={rememberRelayout} />}
     </>
   )
 }

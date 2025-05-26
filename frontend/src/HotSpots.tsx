@@ -39,18 +39,20 @@ export default function HotSpots({partitions}: HotSpotsProps) {
 
   return (
     <>
-      <NavBar slot={slot}/>
-      <h2>Hot spots {slot.partition.year}/{slot.partition.month} {slot.hour}:00-{slot.hour + 1}:00</h2>
-      <div className="controls">
-        <PartitionSelector partitions={partitions} selected={slot.partition} handleSelect={setPartition}/>
-        <HourSelector selected={{hour: slot.hour}} handleSelect={setHour} />
+      <div className="content">
+        <NavBar slot={slot}/>
+        <h2>Hot spots</h2>
+        <div className="controls">
+          <PartitionSelector partitions={partitions} selected={slot.partition} handleSelect={setPartition}/>
+          <HourSelector selected={{hour: slot.hour}} handleSelect={setHour} />
+        </div>
+        {!mapData ? <p>Loading...</p> : <MapComponent name={"Hot spots"} partition={{
+                year: slot.partition.year,
+                month: slot.partition.month
+            }} showHour={{
+                hour: slot.hour
+            }} data={mapData} onRelayout={rememberRelayout} view={mapView} />}
       </div>
-      {!mapData ? <p>Loading...</p> : <MapComponent name={"Hot spots"} partition={{
-              year: slot.partition.year,
-              month: slot.partition.month
-          }} showHour={{
-              hour: slot.hour
-          }} data={mapData} onRelayout={rememberRelayout} view={mapView} />}
     </>
   );
 }

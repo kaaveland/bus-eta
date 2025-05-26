@@ -66,19 +66,21 @@ export default function LegStats({partitions, dataSources}: LegStatsProps) {
 
   return (
     <>
-      <NavBar slot={slot}/>
-      <h2>Leg stats {dsLabel} {slot.partition.year}/{slot.partition.month} {slot.hour}:00-{slot.hour + 1}:00</h2>
-      <div className="controls">
-        <PartitionSelector partitions={partitions} selected={slot.partition} handleSelect={setPartition}/>
-        <HourSelector selected={{hour: slot.hour}} handleSelect={setHour}/>
-        <ViewSelector selected={{id: ds, label: dataSources[ds] ?? ds}} views={labelDatasources(dataSources)}
-                      handleSelect={setDataSource}/>
-        <LinerefSelector selected={lineRef ?? null} handleSelect={setLineRef} lineRefs={lineRefs} defaultLabel="All"/>
-      </div>
+      <div className="content">
+        <NavBar slot={slot}/>
+        <h2>Leg stats</h2>
+        <div className="controls">
+          <PartitionSelector partitions={partitions} selected={slot.partition} handleSelect={setPartition}/>
+          <HourSelector selected={{hour: slot.hour}} handleSelect={setHour}/>
+          <ViewSelector selected={{id: ds, label: dataSources[ds] ?? ds}} views={labelDatasources(dataSources)}
+                        handleSelect={setDataSource}/>
+          <LinerefSelector selected={lineRef ?? null} handleSelect={setLineRef} lineRefs={lineRefs} defaultLabel="All"/>
+        </div>
 
-      {!mapData ? <p>Loading...</p> : <MapComponent name={`Leg stats ${lineRef ?? dsLabel}`} partition={slot.partition} showHour={{
-        hour: slot.hour
-      }} data={mapData} onRelayout={rememberRelayout} view={mapView}/>}
+        {!mapData ? <p>Loading...</p> : <MapComponent name={`Leg stats for ${lineRef ?? dsLabel}`} partition={slot.partition} showHour={{
+          hour: slot.hour
+        }} data={mapData} onRelayout={rememberRelayout} view={mapView}/>}
+      </div>
     </>
   )
 }

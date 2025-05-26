@@ -115,6 +115,7 @@ export const MapComponent: React.FC<MapProps> = (props) => {
             title: {
               text: `${name} for ${year}-${month.toString().padStart(2, '0')} between ${hour}:00 and ${hour + 1}:00${dataSource ? ` | Source: ${dataSource}` : ''}${lineRef ? ` | Line: ${lineRef}` : ''}`,
             },
+            paper_bgcolor: '#f5f5f0',
             hoverlabel: {
               align: "left"
             },
