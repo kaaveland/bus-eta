@@ -1,7 +1,7 @@
 import os
 import sys
 from functools import cache
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 import orjson
 import pandas as pd
@@ -18,8 +18,8 @@ app = Blueprint("api", __name__)
 def set_headers(response: Response) -> Response:
     response.headers.add("Access-Control-Allow-Origin", "*")
     response.headers.add("Access-Control-Allow-Methods", "GET,OPTIONS")
-    response.headers["Cache-Control"] = "public, max-age=3600"
-    response.headers["Expires"] = (datetime.now() + timedelta(seconds=3600)).strftime(
+    response.headers["Cache-Control"] = "public, max-age=5400"
+    response.headers["Expires"] = (datetime.now(timezone.utc) + timedelta(seconds=5400)).strftime(
         "%a, %d %b %Y %H:%M:%S GMT"
     )
     response.headers.add("Vary", "line_ref")

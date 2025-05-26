@@ -10,10 +10,9 @@ dependencies = [
     "pyarrow>=19.0.0",
     "pandas>=2.2.3",
     "db-dtypes>=1.4.1",
-    "plotly>=6.0.0",
-    "dash>=2.18.2",
     "gunicorn>=23.0.0",
     "orjson>=3.10.18",
+    "flask>=3.1.1",
 ]
 
 [project.optional-dependencies]
