@@ -99,6 +99,12 @@ export const ComparisonMap: React.FC<ComparisonMapProps> = (props) => {
             hovertemplate: data.name.map((_, i) => tooltipFrom(prevPartition, partition, hour, i, data))
           }]}
           layout={{
+            margin: {
+              l: 30,
+              r: 30,
+              t: 50,
+              b: 50
+            },
             title: {
               text: `Comparing ${prevPartition.year}/${prevPartition.month} and ${partition.year}/${partition.month} between  ${hour}:00-${hour + 1}:00`
             },

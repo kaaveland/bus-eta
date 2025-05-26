@@ -104,6 +104,12 @@ export const MapComponent: React.FC<MapProps> = (props) => {
             }
           ]}
           layout={{
+            margin: {
+              l: 30,
+              r: 30,
+              t: 50,
+              b: 50
+            },
             autosize: true,
             height: 800,
             title: {
