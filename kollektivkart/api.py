@@ -19,9 +19,9 @@ def set_headers(response: Response) -> Response:
     response.headers.add("Access-Control-Allow-Origin", "*")
     response.headers.add("Access-Control-Allow-Methods", "GET,OPTIONS")
     response.headers["Cache-Control"] = "public, max-age=5400"
-    response.headers["Expires"] = (datetime.now(timezone.utc) + timedelta(seconds=5400)).strftime(
-        "%a, %d %b %Y %H:%M:%S GMT"
-    )
+    response.headers["Expires"] = (
+        datetime.now(timezone.utc) + timedelta(seconds=5400)
+    ).strftime("%a, %d %b %Y %H:%M:%S GMT")
     response.headers.add("Vary", "line_ref")
     response.headers.add("Vary", "data_source")
     return response
