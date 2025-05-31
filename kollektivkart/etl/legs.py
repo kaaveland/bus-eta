@@ -64,6 +64,11 @@ qualify
     or bool_or(estimated) over journey
     or bool_or(journeyCancellation) over journey
     or bool_or(stopCancellation) over journey
+    -- Exclude some super strange journeys
+    or coalesce(abs(extract(epoch from max(aimedArrivalTime) over journey
+                            - min(arrivalTime) over journey)), 0) > 24 * 3600
+    or coalesce(abs(extract(epoch from min(aimedArrivalTime) over journey
+                            - max(arrivalTime) over journey)), 0) > 24 * 3600
   )
 """
 
@@ -73,13 +78,64 @@ def create_clean_arrivals(db: DuckDBPyConnection, root: str, partition: date):
     db.execute(_clean_arrivals, parameters=dict(arrivals=arrivals, partition=partition))
 
 
+_discover_route_name = """
+with journeys as (
+  from clean_arrivals
+  select
+    operatingDate,
+    dataSource,
+    serviceJourneyId,
+    lineRef,
+    directionRef,
+    max_by(stop, sequenceNr) as destination,
+    min_by(stop, sequenceNr) as origin
+  group by all
+), counts as (
+  from journeys
+  select
+    operatingDate,
+    dataSource,
+    lineRef,
+    directionRef,
+    destination,
+    origin,
+    count(*) as count
+  group by all
+)
+from counts
+select
+  operatingDate,
+  dataSource,
+  lineRef,
+  directionRef,
+  max_by(destination, count) as destination,
+  max_by(origin, count) as origin
+group by all
+"""
+
+
+def create_route_name(db: DuckDBPyConnection, root: str):
+    route_name = join(root, "route_name.parquet")
+    q = f"copy ({_discover_route_name}) to '{route_name}' (format parquet, partition_by (operatingDate), overwrite_or_ignore);"
+    db.execute(q)
+
+
 _create_legs = """
-from clean_arrivals
+with canonical as (
+    from read_parquet($route_name, hive_partitioning=true)
+    select
+      operatingDate, lineRef, dataSource, directionRef,
+      min_by(directionRef, operatingDate) over (
+        partition by (dataSource, lineRef, origin, destination)
+      ) as direction
+)
+from clean_arrivals join canonical using(operatingDate, lineRef, dataSource, directionRef)
 select
   operatingDate,
   lineRef,
   dataSource,
   directionRef,
+  canonical.direction as direction,  
   serviceJourneyId,
   lag(sequenceNr) over w as sequenceNr,
 
@@ -98,7 +154,10 @@ select
     lag(aimedDepartureTime) over w
   ))) :: int4 as planned_duration,
 
-  (extract (epoch from arrivalTime - aimedArrivalTime)) :: int4 as delay,
+  (extract (epoch from coalesce(
+          arrivalTime - aimedArrivalTime,
+          departureTime - aimedDepartureTime))
+  ) :: int4 as delay,
   actual_duration - planned_duration as deviation,
 
   stop as to_stop,
@@ -108,12 +167,12 @@ select
   lag(lat) over w as from_lat,
   lag(lon) over w as from_lon,
   st_distance_spheroid(st_point(from_lat, from_lon), st_point(to_lat, to_lon)) :: int as air_distance_meters
-where abs(delay) < 7200
 window w as (
   partition by (operatingDate, serviceJourneyId) order by sequenceNr asc
 )
 qualify
-  from_stop is not null 
+  abs(delay) < 7200
+  and from_stop is not null 
   and start_time is not null 
   and planned_duration is not null 
   and planned_duration between 0 and 7200
@@ -127,12 +186,14 @@ order by operatingDate, from_stop, lineRef
 
 def create_legs(db: DuckDBPyConnection, root: str):
     legs = join(root, "legs.parquet")
+    route_name = join(root, "route_name.parquet/*/*")
     db.execute(
-        f"COPY ({_create_legs}) to '{legs}' (format parquet, partition_by (operatingDate), overwrite_or_ignore);"
+        f"COPY ({_create_legs}) to '{legs}' (format parquet, partition_by (operatingDate), overwrite_or_ignore);",
+        parameters=dict(route_name=route_name),
     )
 
 
-def run_job(db: DuckDBPyConnection, root: str, invalidate: bool):
+def run_job(db: DuckDBPyConnection, root: str, invalidate: bool, from_date: date):
     logging.info("Calculate legs")
     source_partitions = available_daily_partitions(db, join(root, "arrivals.parquet"))
     destination_partitions = (
@@ -143,7 +204,8 @@ def run_job(db: DuckDBPyConnection, root: str, invalidate: bool):
     need = source_partitions - destination_partitions
     create_stopdata(db, root)
     logging.info("Need to calculate %s partitions", len(need))
-    for partition in sorted(need):
+    for partition in sorted(p for p in need if p >= from_date):
         logging.info("Calculate legs for partition %s", partition.isoformat())
         create_clean_arrivals(db, root, partition)
+        create_route_name(db, root)
         create_legs(db, root)

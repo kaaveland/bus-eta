@@ -116,17 +116,17 @@ where hourly_count > 20 and air_distance_meters > 50 and month = $month
 """
 
 
-def write_leg_stats(db: DuckDBPyConnection, root: str, invalidate: bool):
+def write_leg_stats(db: DuckDBPyConnection, root: str, invalidate: bool, from_date: date):
     partitions = leg_stats_partitions(db, root, invalidate)
     dest = join(root, "leg_stats.parquet")
     legs = join(root, "legs.parquet/*/*")
-    for partition in sorted(partitions):
+    for partition in sorted(p for p in partitions if p >= from_date):
         logging.info("Write leg stats for partition %s", partition.isoformat())
         query = f"COPY ({_leg_stats}) TO '{dest}' (format parquet, partition_by (month), overwrite_or_ignore);"
         db.execute(query, parameters=dict(month=partition, legs=legs))
 
 
-def run_job(db: DuckDBPyConnection, root: str, invalidate: bool):
+def run_job(db: DuckDBPyConnection, root: str, invalidate: bool, from_date: date):
     logging.info("Write datasources")
     write_datasources(db, root)
     logging.info("Write stops for lines")
@@ -134,4 +134,4 @@ def run_job(db: DuckDBPyConnection, root: str, invalidate: bool):
     logging.info("Write datasource lines")
     write_datasource_lines(db, root)
     logging.info("Write leg stats")
-    write_leg_stats(db, root, invalidate)
+    write_leg_stats(db, root, invalidate, from_date.replace(day=1))
