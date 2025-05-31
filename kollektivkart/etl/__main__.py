@@ -34,6 +34,11 @@ parser.add_argument(
     type=int,
 )
 parser.add_argument(
+    "--from-date",
+    default="2024-01-01", type=date.fromisoformat,
+    help="Which date to start retrieving/invalidating from"
+)
+parser.add_argument(
     "--skip-bq", action="store_true", help="Do not fetch new data in BigQuery"
 )
 parser.add_argument(
@@ -58,19 +63,20 @@ def main():
     logging.info(
         "Allow resource usage: cpu=%s ram=%sGB", opts.max_cpus, opts.memory_limit_gb
     )
+    from_date = opts.from_date
     if not opts.skip_bq:
         client = Client()
         sync.run_job(
             client,
             db,
             root,
-            from_date=date(2024, 1, 1),
+            from_date=from_date,
             to_date=date.today() - timedelta(days=1),
         )
     if opts.invalidate:
         logging.info("Invalidate downstream of BQ")
-    legs.run_job(db, root, opts.invalidate)
-    leg_stats.run_job(db, root, opts.invalidate)
+    legs.run_job(db, root, opts.invalidate, from_date=from_date)
+    leg_stats.run_job(db, root, opts.invalidate, from_date=from_date)
 
 
 if __name__ == "__main__":
