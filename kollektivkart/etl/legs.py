@@ -64,11 +64,20 @@ qualify
     or bool_or(estimated) over journey
     or bool_or(journeyCancellation) over journey
     or bool_or(stopCancellation) over journey
-    -- Exclude some super strange journeys
-    or coalesce(abs(extract(epoch from max(aimedArrivalTime) over journey
-                            - min(arrivalTime) over journey)), 0) > 24 * 3600
-    or coalesce(abs(extract(epoch from min(aimedArrivalTime) over journey
-                            - max(arrivalTime) over journey)), 0) > 24 * 3600
+    or abs(coalesce(extract(epoch from arrivalTime - coalesce(
+            lag(arrivalTime) over journey,
+            lag(departureTime) over journey
+          )), 0) - coalesce(extract(epoch from aimedArrivalTime - coalesce(
+            lag(aimedArrivalTime) over journey,
+            lag(aimedDepartureTime) over journey
+          )), 0)) > 7200
+  ) AND (
+    (extract (epoch from coalesce(
+        arrivalTime - aimedArrivalTime,
+        departureTime - aimedDepartureTime))) is null
+    or abs((extract (epoch from coalesce(
+        arrivalTime - aimedArrivalTime,
+        departureTime - aimedDepartureTime)))) < 7200
   )
 """
 
@@ -158,6 +167,7 @@ select
           arrivalTime - aimedArrivalTime,
           departureTime - aimedDepartureTime))
   ) :: int4 as delay,
+
   actual_duration - planned_duration as deviation,
 
   stop as to_stop,
