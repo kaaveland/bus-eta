@@ -106,7 +106,7 @@ def lines(datasource: str) -> Response:
 @cache
 def get_stats() -> dict[str, object]:
     pq = os.environ.get("PARQUET_LOCATION", "data")
-    start, end = queries.min_max_date(g.db, pq)
+    start, end = queries.min_max_date(g.db)
     return dict(
         memory=queries.duckdb_memory(g.db),
         leg_count=queries.total_transports(g.db),

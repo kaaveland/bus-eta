@@ -122,20 +122,15 @@ def total_transports(db: DuckDBPyConnection) -> int:
 
 
 def min_max_date(
-    db: DuckDBPyConnection, parquet_location: str
+    db: DuckDBPyConnection
 ) -> tuple[date, date] | None:
-    parquet = f"{parquet_location}/arrivals.parquet/*/*"
-    try:
-        r = db.sql(
-            """
-            select min_date, max_date
-            from arrivals_stats
-        """,
-            params=dict(parquet=parquet),
-        ).fetchall()
-        return tuple(r[0])
-    except Exception:
-        return None
+    r = db.sql(
+    """
+    select min_date, max_date
+    from arrivals_stats
+    """
+    ).fetchall()
+    return tuple(r[0])
 
 
 def total_arrivals(db: DuckDBPyConnection, parquet_location: str) -> int | None:
