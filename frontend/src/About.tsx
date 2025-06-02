@@ -32,7 +32,7 @@ export default function About({partitions, stats}: AboutProps) {
       data set contains data from {start} to {end}. There are {aggregated_count} rows of data discoverable in the maps. These
       were created from {leg_count} legs from one stop to the next, created from {arrivals_count} arrival registrations at stop places.
         Weekend traffic is not included in any of the aggregates.
-      All the data is being served from a DuckDB in-memory database that is currently using {Math.round(memory / 1e6)}MB RAM.</p>
+      All the data is being served from a DuckDB database that is currently using {Math.round(memory / 1e6)}MB RAM.</p>
       <p>You can read a <Link to="https://arktekk.no/blogs/2025_fire_and_forget_linux_p1">blog series</Link> about the infrastructure
       this runs on if you'd like. The <Link to="https://github.com/kaaveland/bus-eta">code</Link> is available under the MIT license. Feel
       free to inspect the network traffic if you'd like to access the underlying data and use it for something cool, it's open data

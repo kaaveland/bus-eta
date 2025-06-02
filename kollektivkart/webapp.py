@@ -8,6 +8,8 @@ from . import api
 
 root = os.environ.get("PARQUET_LOCATION", "data")
 db = duckdb.connect(os.path.join(root, "stats.db"), read_only=True)
+db.execute("set threads = 2;")
+db.execute("set memory_limit = '512MB';")
 server = flask.Flask(__name__)
 server.register_blueprint(api.app, url_prefix="/api")
 
