@@ -1,6 +1,5 @@
 import os
 import sys
-from functools import cache
 from datetime import date, datetime, timedelta, timezone
 
 import orjson
@@ -103,7 +102,6 @@ def lines(datasource: str) -> Response:
     return jsonify(sorted(data, key=lambda item: label_key(item["label"])))
 
 
-@cache
 def get_stats() -> dict[str, object]:
     pq = os.environ.get("PARQUET_LOCATION", "data")
     start, end = queries.min_max_date(g.db)
