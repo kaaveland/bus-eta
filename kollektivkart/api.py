@@ -83,7 +83,12 @@ def datasources() -> Response:
 
 @app.route("/partitions")
 def partitions() -> Response:
-    return jsonify([{"year": d.year, "month": d.month} for d in queries.months(g.db)])
+    return jsonify([
+        {"year": d.year, "month": d.month}
+        for d in queries.months(g.db)
+        # Hide partitions that have too little data
+        if d <= date.today() - timedelta(days=7)
+    ])
 
 
 def label_key(label: str) -> tuple[int, str]:
