@@ -128,8 +128,8 @@ def min_max_date(
     try:
         r = db.sql(
             """
-            select min(operatingDate), max(operatingDate)
-            from read_parquet($parquet, hive_partitioning=true) 
+            select min_date, max_date
+            from arrivals_stats
         """,
             params=dict(parquet=parquet),
         ).fetchall()
@@ -143,8 +143,8 @@ def total_arrivals(db: DuckDBPyConnection, parquet_location: str) -> int | None:
     try:
         r = db.sql(
             """
-            select count(*)
-            from read_parquet($parquet, hive_partitioning=true) 
+            select total_arrivals
+            from arrivals_stats
         """,
             params=dict(parquet=parquet),
         ).fetchall()

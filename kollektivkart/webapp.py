@@ -4,11 +4,10 @@ import flask
 import duckdb
 from flask import g
 
-from . import initdb
 from . import api
 
-db = duckdb.connect()
-initdb.create_tables(db, os.environ.get("PARQUET_LOCATION", "data"))
+root = os.environ.get("PARQUET_LOCATION", "data")
+db = duckdb.connect(os.path.join(root, "stats.db"), read_only=True)
 server = flask.Flask(__name__)
 server.register_blueprint(api.app, url_prefix="/api")
 
