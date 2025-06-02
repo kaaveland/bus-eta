@@ -90,18 +90,14 @@ This notebook produces a few files:
 
 ### Dashboard app
 
-There's a plotly dash app that contains some visualizations in `kollektivkart/`. It requires some data files, see `kollektivkart/initdb.py`.
-
-Samples of these can be found in my public object storage. You can run this to get some data to work with locally:
+There's a flask API app that serves some queries for the frontend react.js app. You can download a `stats.db` (~400 MB) to make it work locally:
 
 ```shell
-for f in {datasources,datasource_line,stop_line,leg_stats}.parquet; do
-  curl -o data/$f https://kaaveland-bus-eta-data.hel1.your-objectstorage.com/devdata/$f
-done
+curl -o data/stats.db https://kaaveland-bus-eta-data.hel1.your-objectstorage.com/devdata/stats.db
 ```
 
 Run it with `uv run python -m kollektivkart` or build it with docker and run it. The dash webapp needs these files at
-runtime to work. If running with docker, use a volume and provide the `PARQUET_LOCATION` environment location to their
+runtime to work. If running with docker, use a volume and provide the `PARQUET_LOCATION` environment location to `stats.db` location
 location. If you want to load them directly from S3, you can provide an environment file like so:
 
 ```shell
@@ -118,11 +114,11 @@ In [api.py](./kollektivkart/api.py) there's an API that is mounted to `/api` on 
 
 ### Frontend
 
-The kollektivkart python package has a plotly dash app in it. There's also an SPA frontend under [frontend](./frontend) that I'm writing to practice typescript and react a little bit.
+There's a SPA frontend under [frontend](./frontend) that I'm writing to practice TypeScript and react a little bit. It's what's deployed to [kollektivkart.arktekk.no](https://kollektivkart.arktekk.no). 
 
 ### Deployment
 
-I run this using podman and a nginx reverse proxy at [kollektivkart.arktekk.no](https://kollektivkart.arktekk.no).
+I run this using podman and a caddy reverse proxy at [kollektivkart.arktekk.no](https://kollektivkart.arktekk.no).
 
 You can use the docker image at [ghcr](https://github.com/kaaveland/bus-eta/pkgs/container/bus-eta), as discussed in the Dashboard app section, it requires access to data files.
 
