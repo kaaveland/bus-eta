@@ -10,7 +10,7 @@ import psutil
 import duckdb
 from google.cloud.bigquery import Client
 
-from . import sync, legs, leg_stats
+from . import sync, legs, leg_stats, mkdb
 
 parser = ArgumentParser(
     description=__doc__, formatter_class=RawDescriptionHelpFormatter
@@ -77,6 +77,7 @@ def main():
         logging.info("Invalidate downstream of BQ")
     legs.run_job(db, root, opts.invalidate, from_date=from_date)
     leg_stats.run_job(db, root, opts.invalidate, from_date=from_date)
+    mkdb.run_job(root)
 
 
 if __name__ == "__main__":
