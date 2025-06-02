@@ -121,16 +121,6 @@ def stats() -> Response:
     return jsonify(get_stats())
 
 
-@app.route("/rush-intensity-rank/<int:year>/<int:month>")
-def rush_intensity_rank(year: int, month: int) -> Response:
-    partition = date(year, month, 1)
-    return to_json(
-        queries.most_rush_intensity(
-            g.db, partition, request.args.get("data_source"), limit=100
-        )
-    )
-
-
 @app.route("/ready")
 def readycheck():
     latest_data = date.fromisoformat(get_stats()["date_range"]["end"])

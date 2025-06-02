@@ -37,58 +37,6 @@ def months(db: DuckDBPyConnection) -> list[date]:
     ]
 
 
-def legs_for_download(
-    db: DuckDBPyConnection,
-    month: date,
-    hour: int,
-    data_source: str | None = None,
-    line_ref: str | None = None,
-    limit: int | None = None,
-) -> pd.DataFrame:
-    limit = f"LIMIT {limit}" if isinstance(limit, int) else ""
-    join_stop = (
-        "JOIN stop_line USING (dataSource, from_stop, to_stop)"
-        if line_ref is not None
-        else ""
-    )
-    where_line = (
-        " AND ($line_ref is null OR $line_ref = stop_line.lineRef)"
-        if line_ref is not None
-        else ""
-    )
-    sql = f"""
-SELECT 
-  dataSource,
-  month,  
-  from_stop,
-  to_stop,
-  air_distance_meters,
-  from_lat,
-  from_lon,
-  to_lat,
-  to_lon,
-  round(hourly_quartile / monthly_duration, 1) as rush_intensity,
-  hourly_duration,
-  hourly_quartile,  
-  monthly_duration,
-  monthly_quartile,  
-  monthly_delay,
-  hourly_delay,
-  monthly_deviation,
-  hourly_deviation,
-  monthly_count,
-  hourly_count,  
-FROM leg_stats {join_stop}
-WHERE month = $month and hour = $hour and ($data_source is null or dataSource = $data_source) {where_line}
-ORDER BY rush_intensity desc
-{limit}
-    """
-    params = dict(month=month, hour=hour, data_source=data_source)
-    if line_ref:
-        params["line_ref"] = line_ref
-
-    return db.sql(sql, params=params).df()
-
 
 def legs(
     db: DuckDBPyConnection,
@@ -127,7 +75,7 @@ FROM leg_stats JOIN stop_line USING (dataSource, from_stop, to_stop)
 WHERE month = $month and hour = $hour and dataSource = $data_source AND ($line_ref is null OR $line_ref = stop_line.lineRef)
     """,
         params=dict(month=month, hour=hour, data_source=data_source, line_ref=line_ref),
-    ).df()
+    ).df().sort_values(by="rush_intensity", ascending=True)
 
 
 def hot_spots(
@@ -165,33 +113,7 @@ def hot_spots(
     LIMIT $limit
         """,
         params=dict(month=month, hour=hour, limit=limit),
-    ).df()
-
-
-def most_rush_intensity(
-    db: DuckDBPyConnection,
-    month: date,
-    data_source: str | None,
-    limit: 100,
-):
-    return db.sql(
-        """
-    SELECT
-      dataSource,
-      from_stop || ' to ' || to_stop || ' between ' || hour || ':00-' || hour || ':59' as name,
-      air_distance_meters,
-      hourly_count,
-      round(hourly_quartile / monthly_duration, 1) as rush_intensity,
-      hourly_duration,
-      hourly_quartile,
-      monthly_duration
-    FROM leg_stats
-    WHERE ($data_source IS NULL OR dataSource = $data_source) AND month = $month
-    ORDER BY rush_intensity DESC
-    LIMIT $limit    
-    """,
-        params=dict(data_source=data_source, limit=limit, month=month),
-    ).df()
+    ).df().sort_values(by="rush_intensity", ascending=True)
 
 
 def total_transports(db: DuckDBPyConnection) -> int:
