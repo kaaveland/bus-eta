@@ -2,7 +2,7 @@ import os
 
 import flask
 import duckdb
-from flask import g
+from flask import g, jsonify
 
 from . import api
 
@@ -23,3 +23,7 @@ def connect_db():
 def close_db(r):
     g.db.close()
     return r
+
+@server.get("/ready")
+def ready():
+    return jsonify(dict(state="up"))

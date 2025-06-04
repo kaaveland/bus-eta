@@ -36,7 +36,7 @@ def make_tables(
 
 def run_job(root: str):
     (fd, db_f) = tempfile.mkstemp(
-        suffix=".db"
+        suffix=".db", dir=root
     )
     os.close(fd)
     os.unlink(db_f)
@@ -45,6 +45,7 @@ def run_job(root: str):
     try:
         make_tables(db, root)
         db.close()
+
         os.rename(db_f, os.path.join(root, "stats.db"))
         logging.info("Placed new duckdb file at %s", os.path.join(root, "stats.db"))
     finally:
