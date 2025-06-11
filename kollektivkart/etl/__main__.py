@@ -35,8 +35,9 @@ parser.add_argument(
 )
 parser.add_argument(
     "--from-date",
-    default="2024-01-01", type=date.fromisoformat,
-    help="Which date to start retrieving/invalidating from"
+    default="2024-01-01",
+    type=date.fromisoformat,
+    help="Which date to start retrieving/invalidating from",
 )
 parser.add_argument(
     "--skip-bq", action="store_true", help="Do not fetch new data in BigQuery"

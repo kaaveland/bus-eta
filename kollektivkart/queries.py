@@ -37,7 +37,6 @@ def months(db: DuckDBPyConnection) -> list[date]:
     ]
 
 
-
 def legs(
     db: DuckDBPyConnection,
     month: date,
@@ -45,8 +44,9 @@ def legs(
     data_source: str,
     line_ref: str | None = None,
 ) -> pd.DataFrame:
-    return db.sql(
-        """
+    return (
+        db.sql(
+            """
 SELECT distinct on (from_stop, to_stop, dataSource)
   from_stop || ' to ' || to_stop as name,
   from_stop,
@@ -74,15 +74,21 @@ SELECT distinct on (from_stop, to_stop, dataSource)
 FROM leg_stats JOIN stop_line USING (dataSource, from_stop, to_stop)
 WHERE month = $month and hour = $hour and dataSource = $data_source AND ($line_ref is null OR $line_ref = stop_line.lineRef)
     """,
-        params=dict(month=month, hour=hour, data_source=data_source, line_ref=line_ref),
-    ).df().sort_values(by="rush_intensity", ascending=True)
+            params=dict(
+                month=month, hour=hour, data_source=data_source, line_ref=line_ref
+            ),
+        )
+        .df()
+        .sort_values(by="rush_intensity", ascending=True)
+    )
 
 
 def hot_spots(
     db: DuckDBPyConnection, month: date, hour: int, limit: int = 1000
 ) -> pd.DataFrame:
-    return db.sql(
-        """
+    return (
+        db.sql(
+            """
     SELECT distinct on (from_stop, to_stop, dataSource)
       from_stop || ' to ' || to_stop as name,
       from_stop,
@@ -112,8 +118,11 @@ def hot_spots(
     ORDER BY rush_intensity DESC
     LIMIT $limit
         """,
-        params=dict(month=month, hour=hour, limit=limit),
-    ).df().sort_values(by="rush_intensity", ascending=True)
+            params=dict(month=month, hour=hour, limit=limit),
+        )
+        .df()
+        .sort_values(by="rush_intensity", ascending=True)
+    )
 
 
 def total_transports(db: DuckDBPyConnection) -> int:
@@ -121,11 +130,9 @@ def total_transports(db: DuckDBPyConnection) -> int:
     return r[0][0]
 
 
-def min_max_date(
-    db: DuckDBPyConnection
-) -> tuple[date, date] | None:
+def min_max_date(db: DuckDBPyConnection) -> tuple[date, date] | None:
     r = db.sql(
-    """
+        """
     select min_date, max_date
     from arrivals_stats
     """
@@ -133,15 +140,13 @@ def min_max_date(
     return tuple(r[0])
 
 
-def total_arrivals(db: DuckDBPyConnection, parquet_location: str) -> int | None:
-    parquet = f"{parquet_location}/arrivals.parquet/*/*"
+def total_arrivals(db: DuckDBPyConnection) -> int | None:
     try:
         r = db.sql(
             """
             select total_arrivals
             from arrivals_stats
-        """,
-            params=dict(parquet=parquet),
+        """
         ).fetchall()
         return r[0][0]
     except Exception:

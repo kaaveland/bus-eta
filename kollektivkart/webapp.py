@@ -24,6 +24,7 @@ def close_db(r):
     g.db.close()
     return r
 
+
 @server.get("/ready")
 def ready():
     return jsonify(dict(state="up"))

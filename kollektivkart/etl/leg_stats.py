@@ -116,7 +116,9 @@ where hourly_count > 20 and air_distance_meters > 50 and month = $month
 """
 
 
-def write_leg_stats(db: DuckDBPyConnection, root: str, invalidate: bool, from_date: date):
+def write_leg_stats(
+    db: DuckDBPyConnection, root: str, invalidate: bool, from_date: date
+):
     partitions = leg_stats_partitions(db, root, invalidate)
     dest = join(root, "leg_stats.parquet")
     legs = join(root, "legs.parquet/*/*")

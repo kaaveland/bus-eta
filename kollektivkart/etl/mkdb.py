@@ -17,10 +17,9 @@ select
     count(*) as total_arrivals
 from read_parquet($parquet, hive_partitioning=true)
 """
-def make_tables(
-    dest_db: DuckDBPyConnection,
-    parquet_location: str
-):
+
+
+def make_tables(dest_db: DuckDBPyConnection, parquet_location: str):
     dest_db.execute(
         f"create table leg_stats as from read_parquet('{parquet_location}/leg_stats.parquet/*/*', hive_partitioning=true) select * order by month, hour, dataSource"
     )
@@ -28,16 +27,16 @@ def make_tables(
     create table datasources as from '{parquet_location}/datasources.parquet' join leg_stats using(dataSource) select distinct dataSource, dataSourceName;
     create table datasource_line as from '{parquet_location}/datasource_line.parquet';
     create table stop_line as from '{parquet_location}/stop_line.parquet';
-    """
-    )
+    """)
     parquet = os.path.join(parquet_location, "arrivals.parquet/*/*")
-    dest_db.execute(f"create table arrivals_stats as {_arrivals_stat}", parameters=dict(parquet=parquet))
+    dest_db.execute(
+        f"create table arrivals_stats as {_arrivals_stat}",
+        parameters=dict(parquet=parquet),
+    )
 
 
 def run_job(root: str):
-    (fd, db_f) = tempfile.mkstemp(
-        suffix=".db", dir=root
-    )
+    (fd, db_f) = tempfile.mkstemp(suffix=".db", dir=root)
     os.close(fd)
     os.unlink(db_f)
     db = duckdb.connect(db_f)

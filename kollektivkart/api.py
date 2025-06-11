@@ -1,4 +1,3 @@
-import os
 import sys
 from datetime import date, datetime, timedelta, timezone
 
@@ -83,12 +82,14 @@ def datasources() -> Response:
 
 @app.route("/partitions")
 def partitions() -> Response:
-    return jsonify([
-        {"year": d.year, "month": d.month}
-        for d in queries.months(g.db)
-        # Hide partitions that have too little data
-        if d <= date.today() - timedelta(days=7)
-    ])
+    return jsonify(
+        [
+            {"year": d.year, "month": d.month}
+            for d in queries.months(g.db)
+            # Hide partitions that have too little data
+            if d <= date.today() - timedelta(days=7)
+        ]
+    )
 
 
 def label_key(label: str) -> tuple[int, str]:
@@ -108,12 +109,11 @@ def lines(datasource: str) -> Response:
 
 
 def get_stats() -> dict[str, object]:
-    pq = os.environ.get("PARQUET_LOCATION", "data")
     start, end = queries.min_max_date(g.db)
     return dict(
         memory=queries.duckdb_memory(g.db),
         leg_count=queries.total_transports(g.db),
-        arrivals_count=queries.total_arrivals(g.db, pq),
+        arrivals_count=queries.total_arrivals(g.db),
         date_range=dict(start=start.isoformat(), end=end.isoformat()),
         aggregated_count=queries.leg_stat_count(g.db),
     )
