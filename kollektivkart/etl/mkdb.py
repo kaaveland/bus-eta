@@ -8,7 +8,7 @@ import logging
 import tempfile
 
 import duckdb
-from duckdb.duckdb import DuckDBPyConnection
+from duckdb import DuckDBPyConnection
 
 _arrivals_stat = """
 select

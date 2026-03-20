@@ -2,7 +2,7 @@ from datetime import date
 from os.path import join
 import logging
 
-from duckdb.duckdb import DuckDBPyConnection
+from duckdb import DuckDBPyConnection
 
 from .partitioning import available_monthly_partitions
 

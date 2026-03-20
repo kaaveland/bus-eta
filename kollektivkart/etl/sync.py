@@ -2,7 +2,7 @@ import logging
 from os.path import join
 
 import duckdb
-from duckdb.duckdb import DuckDBPyConnection
+from duckdb import DuckDBPyConnection
 from pyarrow import Table
 from datetime import date, timedelta
 

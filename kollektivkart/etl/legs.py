@@ -1,7 +1,7 @@
 import logging
 from datetime import date
 from os.path import join
-from duckdb.duckdb import DuckDBPyConnection
+from duckdb import DuckDBPyConnection
 
 from .partitioning import available_daily_partitions
 

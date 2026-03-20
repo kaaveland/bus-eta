@@ -1,6 +1,6 @@
 import pandas as pd
 from datetime import date
-from duckdb.duckdb import DuckDBPyConnection
+from duckdb import DuckDBPyConnection
 
 
 def datasources_by_name(db: DuckDBPyConnection) -> dict[str, str]:
