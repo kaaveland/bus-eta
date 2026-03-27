@@ -32,7 +32,7 @@ def months(db: DuckDBPyConnection) -> list[date]:
     return [
         row[0]
         for row in db.query(
-            "select distinct month from leg_stats order by month asc"
+            "select distinct month :: date from leg_stats order by month asc"
         ).fetchall()
     ]
 
