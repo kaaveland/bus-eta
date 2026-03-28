@@ -130,7 +130,7 @@ def total_transports(db: DuckDBPyConnection) -> int:
     return r[0][0]
 
 
-def min_max_date(db: DuckDBPyConnection) -> tuple[date, date] | None:
+def min_max_date(db: DuckDBPyConnection) -> tuple[date, date]:
     r = db.sql(
         """
     select min_date, max_date
