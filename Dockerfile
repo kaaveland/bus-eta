@@ -8,7 +8,7 @@ ADD pyproject.toml /app/
 ADD kollektivkart /app/kollektivkart/
 
 WORKDIR /app
-RUN uv sync --no-cache --extra=scripts
+RUN uv sync --no-cache --group=scripts
 
 EXPOSE 8000
 ENTRYPOINT ["/app/.venv/bin/gunicorn"]

@@ -1,6 +1,6 @@
 [tools]
 node = "24"
-"ubi:duckdb/duckdb" = "latest"
+duckdb = "1.5.1"
 uv = "latest"
 "ubi:kaaveland/thumper" = "latest"
 
