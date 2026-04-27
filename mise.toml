@@ -2,7 +2,7 @@
 node = "24"
 duckdb = "1.5.1"
 uv = "latest"
-"ubi:kaaveland/thumper" = "latest"
+"github:kaaveland/thumper" = "latest"
 
 [env]
 _.python.venv = { path = ".venv" }
