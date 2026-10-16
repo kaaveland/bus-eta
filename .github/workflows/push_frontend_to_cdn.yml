@@ -29,7 +29,7 @@ jobs:
       - uses: jdx/mise-action@v2
       - name: Install dependencies
         working-directory: frontend
-        run: npm install
+        run: npm ci
       - name: Build frontend bundle
         working-directory: frontend
         run: npm run build

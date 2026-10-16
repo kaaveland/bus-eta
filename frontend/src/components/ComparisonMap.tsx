@@ -55,6 +55,8 @@ export const ComparisonMap: React.FC<ComparisonMapProps> = (props) => {
   const {hour} = showHour;
 
   useEffect(() => {
+    // Deferred on purpose: Plot needs a laid-out container.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
@@ -82,7 +84,6 @@ export const ComparisonMap: React.FC<ComparisonMapProps> = (props) => {
           useResizeHandler={true}
           className="figure"
           data={[{
-            // @ts-expect-error the dependency we use for type-checking is wrongly typed (-:
             type: "scattermap",
             lat: data.lat,
             lon: data.lon,
@@ -90,11 +91,9 @@ export const ComparisonMap: React.FC<ComparisonMapProps> = (props) => {
             marker: {
               color: data.net_change_proportion,
               size: 10,
-              // @ts-expect-error this is actually available despite the typing
               colorscale: "Viridis",
               cmax: 50,
-              cmin: -50,
-              name: ""
+              cmin: -50
             },
             hovertemplate: data.name.map((_, i) => tooltipFrom(prevPartition, partition, hour, i, data))
           }]}
@@ -114,7 +113,6 @@ export const ComparisonMap: React.FC<ComparisonMapProps> = (props) => {
             },
             autosize: true,
             height: 800,
-            // @ts-expect-error the dependency we use for type-checking is wrongly typed (-:
             map: {
               center: {
                 lat: view.lat,

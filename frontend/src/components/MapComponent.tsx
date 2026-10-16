@@ -58,6 +58,8 @@ export const MapComponent: React.FC<MapProps> = (props) => {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // Deferred on purpose: Plot needs a laid-out container.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
@@ -86,7 +88,6 @@ export const MapComponent: React.FC<MapProps> = (props) => {
           className="figure"
           data={[
             {
-              // @ts-expect-error the dependency we use for type-checking is wrongly typed (-:
               type: 'scattermap',
               lat: data.lat,
               lon: data.lon,
@@ -94,11 +95,9 @@ export const MapComponent: React.FC<MapProps> = (props) => {
               marker: {
                 color: data.rush_intensity,
                 size: 10,
-                // @ts-expect-error this is actually available despite the typing
                 colorscale: "Viridis",
                 cmax: 5,
-                cmin: 1,
-                name: ""
+                cmin: 1
               },
               hovertemplate: data.name.map((_, i) => tooltipFrom(partition, hour, i, data))
             }
@@ -119,7 +118,6 @@ export const MapComponent: React.FC<MapProps> = (props) => {
             hoverlabel: {
               align: "left"
             },
-            // @ts-expect-error the dependency we use for type-checking is wrongly typed (-:
             map: {
               center: {
                 lat: view.lat,
