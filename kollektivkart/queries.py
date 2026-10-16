@@ -21,7 +21,7 @@ def lines_for_datasource(db: DuckDBPyConnection, data_source: str) -> dict[str, 
         row[0].split(":")[-1]: row[0]
         for row in db.query(
             """select lineRef from datasource_line 
-               where dataSource = $data_source 
+               where dataSource = $data_source and regexp_matches(lineRef, '\\d+$')
                order by cast(regexp_extract(lineRef, '(\\d+)$') as int)""",
             params=dict(data_source=data_source),
         ).fetchall()

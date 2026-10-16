@@ -6,6 +6,7 @@ on:
       - kollektivkart/**
       - Dockerfile
       - pyproject.toml
+      - uv.lock
       - mise.toml
     branches:
       - main
